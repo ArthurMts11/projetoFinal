@@ -1,0 +1,163 @@
+<div class="container pagina">
+  <a routerLink="/admin/imoveis" class="voltar">‹ Voltar para imóveis</a>
+  <div class="pagina-cabecalho">
+    <h1>{{ edicao() ? 'Editar imóvel' : 'Novo imóvel' }}</h1>
+  </div>
+
+  <app-estado [carregando]="carregando()" [erro]="erro()" (tentarDeNovo)="carregar()">
+    <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+      <section class="cartao">
+        <h2>Dados principais</h2>
+        <div class="grade-form">
+          <label class="campo largo">
+            <span>Título *</span>
+            <input formControlName="titulo" maxlength="255" />
+            <app-erro-campo [controle]="form.controls.titulo" nome="O título" />
+          </label>
+          <label class="campo">
+            <span>Tipo *</span>
+            <select formControlName="tipoImovelId">
+              <option [ngValue]="null" disabled>Selecione…</option>
+              @for (t of tipos(); track t.id) {
+                <option [ngValue]="t.id">{{ t.nome }}</option>
+              }
+            </select>
+            <app-erro-campo [controle]="form.controls.tipoImovelId" nome="O tipo" />
+          </label>
+          <label class="campo">
+            <span>Bairro *</span>
+            <select formControlName="bairroId">
+              <option [ngValue]="null" disabled>Selecione…</option>
+              @for (b of bairros(); track b.id) {
+                <option [ngValue]="b.id">{{ b.nome }} – {{ b.cidade }}</option>
+              }
+            </select>
+            <app-erro-campo [controle]="form.controls.bairroId" nome="O bairro" />
+          </label>
+          <fieldset class="campo">
+            <legend>Finalidade *</legend>
+            <div class="opcoes-segmentadas">
+              <label
+                ><input type="radio" formControlName="finalidade" value="VENDA" />
+                <span>Venda</span></label
+              >
+              <label
+                ><input type="radio" formControlName="finalidade" value="ALUGUEL" />
+                <span>Aluguel</span></label
+              >
+            </div>
+          </fieldset>
+          <label class="campo">
+            <span>Situação *</span>
+            <select formControlName="status">
+              @for (s of situacoes; track s) {
+                <option [value]="s">{{ rotuloStatus[s] }}</option>
+              }
+            </select>
+          </label>
+          <label class="campo">
+            <span>Preço de venda (R$){{ precoObrigatorio('precoVenda') ? ' *' : '' }}</span>
+            <input
+              type="number"
+              formControlName="precoVenda"
+              min="0"
+              step="0.01"
+              inputmode="decimal"
+            />
+            <app-erro-campo [controle]="form.controls.precoVenda" nome="O preço de venda" />
+          </label>
+          <label class="campo">
+            <span>Aluguel mensal (R$){{ precoObrigatorio('precoAluguel') ? ' *' : '' }}</span>
+            <input
+              type="number"
+              formControlName="precoAluguel"
+              min="0"
+              step="0.01"
+              inputmode="decimal"
+            />
+            <app-erro-campo [controle]="form.controls.precoAluguel" nome="O aluguel" />
+          </label>
+          <label class="campo largo">
+            <span>Descrição</span>
+            <textarea formControlName="descricao" rows="4"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="cartao">
+        <h2>Características</h2>
+        <div class="grade-form">
+          <label class="campo"
+            ><span>Dormitórios</span>
+            <input type="number" formControlName="dormitorios" min="0" step="1" />
+            <app-erro-campo [controle]="form.controls.dormitorios" nome="Dormitórios"
+          /></label>
+          <label class="campo"
+            ><span>Banheiros</span>
+            <input type="number" formControlName="banheiros" min="0" step="1" />
+            <app-erro-campo [controle]="form.controls.banheiros" nome="Banheiros"
+          /></label>
+          <label class="campo"
+            ><span>Vagas de garagem</span>
+            <input type="number" formControlName="garagem" min="0" step="1" />
+            <app-erro-campo [controle]="form.controls.garagem" nome="Vagas"
+          /></label>
+          <label class="campo"
+            ><span>Área total (m²)</span>
+            <input type="number" formControlName="areaTotal" min="0" step="0.01" />
+            <app-erro-campo [controle]="form.controls.areaTotal" nome="A área total"
+          /></label>
+          <label class="campo"
+            ><span>Área construída (m²)</span>
+            <input type="number" formControlName="areaConstruida" min="0" step="0.01" />
+            <app-erro-campo [controle]="form.controls.areaConstruida" nome="A área construída"
+          /></label>
+          <label class="campo largo"
+            ><span>Itens (separados por vírgula)</span>
+            <input
+              formControlName="caracteristicas"
+              placeholder="Piscina, Churrasqueira, Portaria 24h"
+          /></label>
+          <label class="campo-check largo"
+            ><input type="checkbox" formControlName="destaque" />
+            <span>Imóvel em destaque</span></label
+          >
+        </div>
+      </section>
+
+      <section class="cartao">
+        <h2>Endereço</h2>
+        <div class="grade-form">
+          <label class="campo largo"
+            ><span>Rua *</span>
+            <input formControlName="endereco" />
+            <app-erro-campo [controle]="form.controls.endereco" nome="A rua"
+          /></label>
+          <label class="campo"><span>Número</span><input formControlName="numero" /></label>
+          <label class="campo"
+            ><span>Complemento</span><input formControlName="complemento"
+          /></label>
+          <label class="campo"
+            ><span>CEP</span>
+            <input
+              formControlName="cep"
+              placeholder="00000-000"
+              inputmode="numeric"
+              maxlength="9" />
+            <app-erro-campo [controle]="form.controls.cep" nome="O CEP"
+          /></label>
+        </div>
+      </section>
+
+      @if (erroSalvar()) {
+        <div class="alerta alerta-erro" role="alert">{{ erroSalvar() }}</div>
+      }
+      <div class="form-acoes">
+        <button type="submit" class="btn btn-primario" [disabled]="salvando()">
+          {{ salvando() ? 'Salvando…' : 'Salvar imóvel' }}
+        </button>
+        <a routerLink="/admin/imoveis" class="btn btn-secundario">Cancelar</a>
+      </div>
+    </form>
+  </app-estado>
+</div>
