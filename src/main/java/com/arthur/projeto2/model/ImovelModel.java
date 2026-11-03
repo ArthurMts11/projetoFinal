@@ -3,11 +3,14 @@ package com.arthur.projeto2.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +22,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -50,8 +55,9 @@ public class ImovelModel implements Serializable {
     @Column(nullable = false)
     private FinalidadeImovel finalidade;
 
+    // VARCHAR para aceitar status novos (ex.: RESERVADO) sem ALTER TABLE; ver MigracaoBanco
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     private StatusImovel status = StatusImovel.DISPONIVEL;
 
     private Integer dormitorios;
@@ -94,6 +100,13 @@ public class ImovelModel implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private UsuarioModel usuario;
+
+    // Só leitura: as fotos têm CRUD próprio em /fotos. Capa primeiro, depois pela ordem.
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonIgnoreProperties("imovel")
+    @OneToMany(mappedBy = "imovel")
+    @OrderBy("capa DESC, ordem ASC")
+    private List<FotoImovelModel> fotos = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false,

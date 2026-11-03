@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,6 +32,7 @@ public class FotoImovelModel implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @JsonIgnoreProperties({"fotos", "hibernateLazyInitializer", "handler"})
     @ManyToOne
     @JoinColumn(name = "imovel_id", nullable = false)
     private ImovelModel imovel;
@@ -52,6 +56,20 @@ public class FotoImovelModel implements Serializable {
     @Column(name = "updated_at", nullable = false,
             columnDefinition = "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
+
+    /**
+     * Endereço público da foto (servida pelo UploadConfig em /uploads/**).
+     * O caminho no disco vem como "./uploads/20/arquivo.jpg" ou "uploads/...".
+     */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public String getUrl() {
+        if (caminho == null) {
+            return null;
+        }
+        String c = caminho.replace('\\', '/');
+        int i = c.indexOf("uploads/");
+        return i >= 0 ? "/" + c.substring(i) : "/uploads/" + (imovel != null ? imovel.getId() + "/" : "") + nomeArquivo;
+    }
 
     @Override
     public int hashCode() {
