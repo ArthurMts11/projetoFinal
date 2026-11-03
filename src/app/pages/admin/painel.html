@@ -1,0 +1,127 @@
+<div class="container pagina">
+  <div class="pagina-cabecalho">
+    <div>
+      <h1>Painel</h1>
+      <p class="texto-suave">Resumo da imobiliária agora.</p>
+    </div>
+    <button type="button" class="btn btn-secundario" (click)="carregar()">Atualizar</button>
+  </div>
+
+  <app-estado [carregando]="carregando()" [erro]="erro()" (tentarDeNovo)="carregar()">
+    @if (dados(); as d) {
+      <div class="kpis">
+        <a class="kpi" routerLink="/admin/imoveis">
+          <p class="kpi-rotulo">Imóveis disponíveis</p>
+          <p class="kpi-valor">{{ d.imoveisDisponiveis }}</p>
+          <p class="kpi-detalhe">de {{ d.totalImoveis }} cadastrados</p>
+        </a>
+        <a class="kpi" routerLink="/admin/ofertas" [queryParams]="{ status: 'PENDENTE' }">
+          <p class="kpi-rotulo">Ofertas pendentes</p>
+          <p class="kpi-valor">{{ d.ofertasPendentes }}</p>
+          <p class="kpi-detalhe">aguardando sua resposta</p>
+        </a>
+        <a class="kpi" routerLink="/admin/contratos">
+          <p class="kpi-rotulo">Contratos aguardando assinatura</p>
+          <p class="kpi-valor">{{ d.contratosAguardandoAssinatura }}</p>
+          <p class="kpi-detalhe">aprovados ou a aprovar</p>
+        </a>
+      </div>
+
+      <div class="graficos">
+        <section class="cartao grafico-cartao" aria-labelledby="g-bairros">
+          <h2 id="g-bairros">Imóveis por bairro</h2>
+          <div class="grafico-area" [style.height.px]="60 + porBairro().length * 34">
+            <canvas
+              #graficoBairros
+              role="img"
+              aria-label="Gráfico de barras: quantidade de imóveis por bairro"
+            ></canvas>
+          </div>
+          <details>
+            <summary>Ver como tabela</summary>
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th>Bairro</th>
+                  <th class="num">Imóveis</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of porBairro(); track l.rotulo) {
+                  <tr>
+                    <td>{{ l.rotulo }}</td>
+                    <td class="num">{{ l.total }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <section class="cartao grafico-cartao" aria-labelledby="g-ofertas">
+          <h2 id="g-ofertas">Ofertas por situação</h2>
+          <p class="texto-suave" style="margin: 0 0 8px">
+            {{ totalOfertas() }} {{ totalOfertas() === 1 ? 'oferta' : 'ofertas' }} no total
+          </p>
+          <div class="grafico-area" [style.height.px]="60 + porSituacao().length * 34">
+            <canvas
+              #graficoOfertas
+              role="img"
+              aria-label="Gráfico de barras: quantidade de ofertas por situação"
+            ></canvas>
+          </div>
+          <details>
+            <summary>Ver como tabela</summary>
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th>Situação</th>
+                  <th class="num">Ofertas</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of porSituacao(); track l.rotulo) {
+                  <tr>
+                    <td>{{ l.rotulo }}</td>
+                    <td class="num">{{ l.total }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <!-- Duas partes de um todo: barra segmentada com rótulo em cada parte -->
+        <section class="cartao grafico-cartao" aria-labelledby="g-finalidade">
+          <h2 id="g-finalidade">Imóveis por finalidade</h2>
+          <div
+            class="barra-segmentada"
+            role="img"
+            [attr.aria-label]="'Imóveis por finalidade: ' + descricaoFinalidade()"
+          >
+            @for (p of porFinalidade(); track p.rotulo) {
+              @if (p.total > 0) {
+                <div
+                  class="segmento"
+                  [style.flex-grow]="p.total"
+                  [style.background]="p.cor"
+                  [title]="p.rotulo + ': ' + p.total + ' (' + p.pct + '%)'"
+                >
+                  <span>{{ p.total }} · {{ p.pct }}%</span>
+                </div>
+              }
+            }
+          </div>
+          <ul class="legenda">
+            @for (p of porFinalidade(); track p.rotulo) {
+              <li>
+                <span class="legenda-cor" [style.background]="p.cor"></span>{{ p.rotulo }} —
+                {{ p.total }}
+              </li>
+            }
+          </ul>
+        </section>
+      </div>
+    }
+  </app-estado>
+</div>
