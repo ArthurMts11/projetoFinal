@@ -1,0 +1,161 @@
+<section class="hero">
+  <div class="container">
+    <h1>Encontre o imóvel certo para você</h1>
+    <p>
+      Casas, apartamentos e salas para comprar ou alugar, com atendimento de quem conhece a cidade.
+    </p>
+  </div>
+</section>
+
+<div class="container vitrine">
+  <button
+    type="button"
+    class="btn btn-secundario btn-filtros"
+    (click)="filtrosAbertos.set(!filtrosAbertos())"
+    [attr.aria-expanded]="filtrosAbertos()"
+    aria-controls="filtros"
+  >
+    {{ filtrosAbertos() ? 'Fechar filtros' : 'Filtrar imóveis' }}
+  </button>
+
+  <form
+    id="filtros"
+    class="painel-filtros"
+    [class.aberto]="filtrosAbertos()"
+    [formGroup]="form"
+    (ngSubmit)="aplicar()"
+    novalidate
+    aria-label="Filtros"
+  >
+    <h2 class="painel-filtros-titulo">Filtros</h2>
+
+    <label class="campo">
+      <span>Bairro</span>
+      <select formControlName="bairroId">
+        <option [ngValue]="null">Todos os bairros</option>
+        @for (b of bairros(); track b.id) {
+          <option [ngValue]="b.id">{{ b.nome }} – {{ b.cidade }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="campo">
+      <span>Tipo</span>
+      <select formControlName="tipoId">
+        <option [ngValue]="null">Todos os tipos</option>
+        @for (t of tipos(); track t.id) {
+          <option [ngValue]="t.id">{{ t.nome }}</option>
+        }
+      </select>
+    </label>
+
+    <fieldset class="campo">
+      <legend>Finalidade</legend>
+      <div class="opcoes-segmentadas">
+        <label
+          ><input type="radio" formControlName="finalidade" value="" /> <span>Todas</span></label
+        >
+        <label
+          ><input type="radio" formControlName="finalidade" value="VENDA" />
+          <span>Venda</span></label
+        >
+        <label
+          ><input type="radio" formControlName="finalidade" value="ALUGUEL" />
+          <span>Aluguel</span></label
+        >
+      </div>
+    </fieldset>
+
+    <div class="campo-duplo">
+      <label class="campo">
+        <span>Preço mínimo (R$)</span>
+        <input
+          type="number"
+          formControlName="precoMin"
+          min="0"
+          step="100"
+          inputmode="numeric"
+          placeholder="0"
+        />
+        <app-erro-campo [controle]="form.controls.precoMin" nome="O preço mínimo" />
+      </label>
+      <label class="campo">
+        <span>Preço máximo (R$)</span>
+        <input
+          type="number"
+          formControlName="precoMax"
+          min="0"
+          step="100"
+          inputmode="numeric"
+          placeholder="Sem limite"
+        />
+        <app-erro-campo [controle]="form.controls.precoMax" nome="O preço máximo" />
+      </label>
+    </div>
+    @if (form.errors?.['faixa'] && (form.touched || form.dirty)) {
+      <small class="erro-campo" role="alert">O preço mínimo não pode ser maior que o máximo.</small>
+    }
+
+    <div class="painel-filtros-acoes">
+      <button type="submit" class="btn btn-primario">Buscar</button>
+      <button type="button" class="btn btn-link" (click)="limpar()">Limpar filtros</button>
+    </div>
+  </form>
+
+  <section class="vitrine-resultados" aria-labelledby="titulo-resultados">
+    <div class="barra-resultados">
+      <h2 id="titulo-resultados">
+        @if (resultado(); as r) {
+          {{ r.totalElements }}
+          {{ r.totalElements === 1 ? 'imóvel disponível' : 'imóveis disponíveis' }}
+        } @else {
+          Imóveis disponíveis
+        }
+      </h2>
+      <label class="campo campo-inline" [formGroup]="form">
+        <span>Ordenar por</span>
+        <select formControlName="ordem" (change)="ordenar()">
+          <option value="recentes">Mais recentes</option>
+          <option value="preco_asc">Menor preço</option>
+          <option value="preco_desc">Maior preço</option>
+        </select>
+      </label>
+    </div>
+
+    <app-estado
+      [carregando]="carregando()"
+      [erro]="erro()"
+      [vazio]="resultado()?.content?.length === 0"
+      [mensagemVazio]="
+        temFiltro()
+          ? 'Nenhum imóvel combina com esses filtros. Tente ampliar a faixa de preço ou trocar o bairro.'
+          : 'Ainda não há imóveis disponíveis.'
+      "
+      (tentarDeNovo)="carregar()"
+    >
+      @if (temFiltro()) {
+        <button vazio type="button" class="btn btn-secundario" (click)="limpar()">
+          Limpar filtros
+        </button>
+      }
+      <div class="grade-imoveis">
+        @for (imovel of resultado()?.content ?? []; track imovel.id) {
+          <app-imovel-card
+            [imovel]="imovel"
+            [mostrarFavorito]="auth.isCliente()"
+            [favorito]="favoritos().has(imovel.id!)"
+            (alternarFavorito)="alternarFavorito($event)"
+          />
+        }
+      </div>
+      @if (resultado(); as r) {
+        <app-paginacao
+          [pagina]="r.page"
+          [totalPaginas]="r.totalPages"
+          [totalItens]="r.totalElements"
+          (mudar)="irParaPagina($event)"
+        />
+      }
+    </app-estado>
+  </section>
+</div>

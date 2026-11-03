@@ -1,0 +1,245 @@
+<div class="container detalhe">
+  <a routerLink="/" class="voltar">‹ Voltar para a vitrine</a>
+
+  @if (naoEncontrado()) {
+    <div class="estado">
+      <p class="estado-titulo">Imóvel não encontrado</p>
+      <p>Ele pode ter sido removido ou o endereço está incorreto.</p>
+      <a routerLink="/" class="btn btn-primario">Ver imóveis disponíveis</a>
+    </div>
+  } @else {
+    <app-estado [carregando]="carregando()" [erro]="erro()" (tentarDeNovo)="carregar()">
+      @if (imovel(); as i) {
+        <div class="detalhe-grade">
+          <div class="detalhe-principal">
+            <div class="galeria">
+              @if (fotos().length > 0) {
+                <img
+                  [src]="fotos()[fotoAtual()]"
+                  [alt]="'Foto ' + (fotoAtual() + 1) + ' de ' + i.titulo"
+                />
+                @if (fotos().length > 1) {
+                  <button
+                    type="button"
+                    class="galeria-seta esquerda"
+                    aria-label="Foto anterior"
+                    (click)="fotoAnterior()"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    class="galeria-seta direita"
+                    aria-label="Próxima foto"
+                    (click)="proximaFoto()"
+                  >
+                    ›
+                  </button>
+                  <span class="galeria-contador">{{ fotoAtual() + 1 }} / {{ fotos().length }}</span>
+                }
+              } @else {
+                <div class="foto-padrao grande">
+                  <app-icone nome="casa" [tamanho]="72" /><span>Sem fotos cadastradas</span>
+                </div>
+              }
+            </div>
+            @if (fotos().length > 1) {
+              <div class="miniaturas">
+                @for (f of fotos(); track f; let n = $index) {
+                  <button
+                    type="button"
+                    [class.ativa]="n === fotoAtual()"
+                    (click)="fotoAtual.set(n)"
+                    [attr.aria-label]="'Ver foto ' + (n + 1)"
+                  >
+                    <img [src]="f" alt="" loading="lazy" />
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="detalhe-cabecalho">
+              <p class="card-imovel-tipo">
+                {{ i.tipoImovel.nome }} · Cód. {{ i.id }}
+                <app-badge [status]="i.status" />
+              </p>
+              <h1>{{ i.titulo }}</h1>
+              <p class="card-imovel-local">
+                <app-icone nome="local" [tamanho]="16" /> {{ i.endereco
+                }}{{ i.numero ? ', ' + i.numero : '' }} – {{ i.bairro.nome }},
+                {{ i.bairro.cidade }}/{{ i.bairro.estado }}
+              </p>
+            </div>
+
+            <ul class="atributos-detalhe">
+              <li>
+                <app-icone nome="cama" /> <strong>{{ i.dormitorios ?? 0 }}</strong> dormitórios
+              </li>
+              <li>
+                <app-icone nome="banho" /> <strong>{{ i.banheiros ?? 0 }}</strong> banheiros
+              </li>
+              <li>
+                <app-icone nome="carro" /> <strong>{{ i.garagem ?? 0 }}</strong> vagas
+              </li>
+              @if (i.areaTotal) {
+                <li>
+                  <app-icone nome="area" /> <strong>{{ i.areaTotal }} m²</strong> total
+                </li>
+              }
+              @if (i.areaConstruida) {
+                <li>
+                  <app-icone nome="casa" /> <strong>{{ i.areaConstruida }} m²</strong> construída
+                </li>
+              }
+            </ul>
+
+            @if (i.descricao) {
+              <h2>Descrição</h2>
+              <p class="texto-longo">{{ i.descricao }}</p>
+            }
+            @if (caracteristicas().length) {
+              <h2>Características</h2>
+              <ul class="chips">
+                @for (c of caracteristicas(); track c) {
+                  <li>{{ c }}</li>
+                }
+              </ul>
+            }
+          </div>
+
+          <aside class="detalhe-lateral">
+            <div class="cartao cartao-preco">
+              <span
+                class="etiqueta-finalidade estatica"
+                [class.aluguel]="i.finalidade === 'ALUGUEL'"
+              >
+                {{ rotuloFinalidade[i.finalidade] }}
+              </span>
+              <p class="preco-grande">
+                {{ preco() | currency: 'BRL' }}
+                @if (i.finalidade === 'ALUGUEL') {
+                  <small>/mês</small>
+                }
+              </p>
+              @if (i.finalidade === 'VENDA' && i.precoAluguel) {
+                <p class="texto-suave">
+                  Também para alugar: {{ i.precoAluguel | currency: 'BRL' }}/mês
+                </p>
+              }
+              @if (i.finalidade === 'ALUGUEL' && i.precoVenda) {
+                <p class="texto-suave">Também à venda: {{ i.precoVenda | currency: 'BRL' }}</p>
+              }
+
+              <a class="btn btn-secundario btn-bloco" [href]="linkContato()">
+                <app-icone nome="email" /> Entrar em contato
+              </a>
+              @if (auth.isCliente()) {
+                <button
+                  type="button"
+                  class="btn btn-secundario btn-bloco"
+                  (click)="alternarFavorito()"
+                  [attr.aria-pressed]="favorito()"
+                >
+                  <app-icone nome="coracao" [cheio]="favorito()" />
+                  {{ favorito() ? 'Nos seus favoritos' : 'Favoritar' }}
+                </button>
+              }
+            </div>
+
+            <!-- Fazer oferta: só aparece para imóvel disponível -->
+            @if (podeOfertar()) {
+              <div class="cartao">
+                <h2>Fazer oferta</h2>
+                @if (!auth.logado()) {
+                  <p class="texto-suave">
+                    Entre com sua conta de cliente para enviar uma proposta.
+                  </p>
+                  <button
+                    type="button"
+                    class="btn btn-primario btn-bloco"
+                    (click)="entrarParaOfertar()"
+                  >
+                    Entrar para fazer oferta
+                  </button>
+                } @else if (auth.isAdmin()) {
+                  <p class="texto-suave">
+                    Ofertas são feitas por clientes. Você pode acompanhá-las em
+                    <a routerLink="/admin/ofertas">Ofertas</a>.
+                  </p>
+                } @else if (ofertaEnviada()) {
+                  <div class="alerta alerta-sucesso" role="status">
+                    Oferta enviada! Você será avisado quando a imobiliária responder.
+                    <a routerLink="/cliente/ofertas">Ver minhas ofertas</a>
+                  </div>
+                } @else {
+                  <form [formGroup]="form" (ngSubmit)="enviarOferta()" novalidate>
+                    @if (tiposOferta().length > 1) {
+                      <fieldset class="campo">
+                        <legend>Tipo da proposta</legend>
+                        <div class="opcoes-segmentadas">
+                          @for (t of tiposOferta(); track t) {
+                            <label
+                              ><input type="radio" formControlName="tipo" [value]="t" />
+                              <span>{{ rotuloFinalidade[t] }}</span></label
+                            >
+                          }
+                        </div>
+                      </fieldset>
+                    }
+                    <label class="campo">
+                      <span
+                        >Valor proposto (R$){{
+                          form.value.tipo === 'ALUGUEL' ? ' por mês' : ''
+                        }}
+                        *</span
+                      >
+                      <input
+                        type="number"
+                        formControlName="valorProposto"
+                        min="1"
+                        step="0.01"
+                        inputmode="decimal"
+                        [placeholder]="preco() ?? ''"
+                      />
+                      <app-erro-campo
+                        [controle]="form.controls.valorProposto"
+                        nome="O valor proposto"
+                      />
+                    </label>
+                    <label class="campo">
+                      <span>Mensagem (opcional)</span>
+                      <textarea
+                        formControlName="mensagem"
+                        rows="3"
+                        maxlength="2000"
+                        placeholder="Ex.: Posso dar uma entrada maior, mudança em 30 dias…"
+                      ></textarea>
+                      <app-erro-campo [controle]="form.controls.mensagem" nome="A mensagem" />
+                    </label>
+                    @if (erroOferta()) {
+                      <div class="alerta alerta-erro" role="alert">{{ erroOferta() }}</div>
+                    }
+                    <button
+                      type="submit"
+                      class="btn btn-primario btn-bloco"
+                      [disabled]="enviando()"
+                    >
+                      {{ enviando() ? 'Enviando…' : 'Enviar oferta' }}
+                    </button>
+                  </form>
+                }
+              </div>
+            } @else {
+              <div class="cartao">
+                <p class="alerta alerta-info">
+                  Este imóvel está <strong>{{ rotuloStatus[i.status].toLowerCase() }}</strong> e não
+                  recebe novas ofertas no momento.
+                </p>
+              </div>
+            }
+          </aside>
+        </div>
+      }
+    </app-estado>
+  }
+</div>
