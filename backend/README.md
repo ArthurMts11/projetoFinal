@@ -13,7 +13,7 @@ As respostas das perguntas da atividade estão em [Respostas_Atividade_JWT_Arthu
 ## Como rodar
 
 1. Inicie o MySQL (MAMP, porta 8889, usuário e senha `root`).
-2. Importe o arquivo `dump.sql`, que cria o banco `pw4` com os dados.
+2. Importe o arquivo `../banco/pw4.sql`, que cria o banco `pw4` já com as tabelas e os dados de demonstração.
 3. Na pasta do projeto, rode:
    ```
    mvn spring-boot:run
@@ -24,11 +24,11 @@ Opcionalmente, defina a variável `JWT_SECRET` com pelo menos 32 caracteres. Sem
 
 ## Trabalho final: ofertas, contratos e favoritos
 
-O front-end em Angular que consome esta API está no repositório do projeto final (pasta `projetoFinal`).
+O front-end em Angular que consome esta API está na pasta `../frontend`.
 
 - Na primeira execução o Hibernate cria as tabelas `ofertas`, `contratos` e `favoritos`, e o `MigracaoBanco`
   converte a coluna `imoveis.status` para VARCHAR (para aceitar o novo status `RESERVADO`).
-- `dados_demo.sql` (opcional, rode depois de subir a API uma vez) adiciona bairros, tipos, imóveis e o usuário
+- `../banco/pw4.sql` já traz tudo pronto. Para um banco antigo, `../banco/dados_demo.sql` (rode depois de subir a API uma vez) adiciona bairros, tipos, imóveis e o usuário
   `cliente2.jwt@teste.com` para testar ofertas concorrentes.
 - Os PDFs dos contratos são gerados sem biblioteca externa (`PdfSimples`) e salvos em `uploads/contratos/`.
 - O e-mail ao cliente (oferta aceita, contrato enviado/cancelado) usa as variáveis `MAIL_USER` e `MAIL_PASSWORD`.
@@ -50,7 +50,7 @@ Erros seguem sempre o formato `{"status": 409, "erro": "mensagem"}` (404 item n�
 |---|---|---|
 | admin.jwt@teste.com | Senha@123 | ADMIN |
 | cliente.jwt@teste.com | Senha@123 | CLIENTE |
-| cliente2.jwt@teste.com | Senha@123 | CLIENTE (criado pelo `dados_demo.sql`) |
+| cliente2.jwt@teste.com | Senha@123 | CLIENTE |
 
 ## Rotas
 

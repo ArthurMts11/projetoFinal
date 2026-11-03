@@ -2,7 +2,7 @@
 
 Trabalho final de Programação Web IV (IFFar, Campus Panambi). Front-end do sistema da imobiliária,
 em **Angular 22**, consumindo a API REST em Spring Boot construída na disciplina
-(repositório [Java-web](https://github.com/ArthurMts11/Java-web)).
+(pasta `../backend` deste repositório).
 
 ## Tecnologias
 
@@ -14,26 +14,17 @@ em **Angular 22**, consumindo a API REST em Spring Boot construída na disciplin
 
 ## Como rodar
 
-### 1. Backend (pasta `projeto2`)
+Veja o README na raiz do repositório (banco, backend e front-end).
 
-1. Inicie o MySQL (MAMP, porta 8889, usuário e senha `root`) e importe `dump.sql`.
-2. Defina `JWT_SECRET` com pelo menos 32 caracteres (opcional, mas sem ela o token deixa de valer quando a API reinicia).
-3. Rode `mvn spring-boot:run`. Na primeira execução o Hibernate cria as tabelas `ofertas`, `contratos` e `favoritos`.
-4. (Opcional) Importe `dados_demo.sql` para ter bairros, tipos, imóveis e um segundo cliente para testar.
-
-A API fica em `http://localhost:8080` e já libera o front em `http://localhost:4200` (CORS).
-
-### 2. Front-end (esta pasta)
-
-Precisa do Node.js 22.22 ou mais novo (ou 24+).
+Resumo do front-end, com a API já rodando em `http://localhost:8080`:
 
 ```bash
+cd frontend
 npm install
 npm start
 ```
 
-Abra `http://localhost:4200`.
-
+Abra `http://localhost:4200`. Precisa do Node.js 22.22 ou mais novo (ou 24+).
 O endereço da API e o e-mail de contato da imobiliária ficam em `src/app/core/config.ts`.
 
 ## Usuários de teste
@@ -42,7 +33,7 @@ O endereço da API e o e-mail de contato da imobiliária ficam em `src/app/core/
 |---|---|---|
 | admin.jwt@teste.com | Senha@123 | ADMIN |
 | cliente.jwt@teste.com | Senha@123 | CLIENTE |
-| cliente2.jwt@teste.com | Senha@123 | CLIENTE (criado pelo `dados_demo.sql`) |
+| cliente2.jwt@teste.com | Senha@123 | CLIENTE |
 
 Também dá para criar uma conta de cliente pela tela "Cadastre-se".
 

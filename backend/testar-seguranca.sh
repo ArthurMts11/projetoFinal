@@ -30,7 +30,7 @@ echo
 
 ADMIN=$(token admin.jwt@teste.com)
 CLIENTE=$(token cliente.jwt@teste.com)
-[ -z "$ADMIN" ] && echo "ATENÇÃO: login do admin falhou (a API está rodando? o dump.sql foi importado?)"
+[ -z "$ADMIN" ] && echo "ATENÇÃO: login do admin falhou (a API está rodando? o banco/pw4.sql foi importado?)"
 [ -z "$CLIENTE" ] && echo "ATENÇÃO: login do cliente falhou"
 
 echo "--- Rotas públicas (200 sem token) ---"
