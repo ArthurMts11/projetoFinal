@@ -8,6 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.arthur.projeto2.exceptions.RegraNegocioException;
+import com.arthur.projeto2.repository.ImovelRepository;
+
 import com.arthur.projeto2.model.BairroModel;
 import com.arthur.projeto2.repository.BairroRepository;
 
@@ -16,6 +19,9 @@ public class BairroService {
 
     @Autowired
     private BairroRepository repository;
+
+    @Autowired
+    private ImovelRepository imovelRepository;
 
     public List<BairroModel> getAll() {
         return repository.findAll();
@@ -46,6 +52,9 @@ public class BairroService {
     }
 
     public void delete(Integer id) {
+        if (imovelRepository.existsByBairroId(id)) {
+            throw new RegraNegocioException("Não é possível excluir este bairro: existem imóveis vinculados a ele.");
+        }
         repository.deleteById(id);
     }
 

@@ -6,12 +6,15 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -34,8 +37,9 @@ public class UsuarioApiController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        List<UsuarioModel> listaModel = service.getAllUsers();
+    public ResponseEntity<List<UserDTO>> getAllUsers(@RequestParam(required = false) String busca) {
+        // ?busca= filtra por nome ou e-mail
+        List<UsuarioModel> listaModel = busca == null ? service.getAllUsers() : service.buscar(busca);
         List<UserDTO> listaDto = listaModel.stream().map(UserDTO::new).collect(Collectors.toList());
         return ResponseEntity.status(HttpStatus.OK).body(listaDto);
     }
@@ -63,6 +67,13 @@ public class UsuarioApiController {
         if (model == null) {
             return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.noContent().build();
+    }
+
+    // Um admin não pode excluir a si mesmo (o service responde 409)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id, Authentication auth) {
+        service.excluir(id, auth.getName());
         return ResponseEntity.noContent().build();
     }
 }

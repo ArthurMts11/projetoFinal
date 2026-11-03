@@ -8,6 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.arthur.projeto2.exceptions.RegraNegocioException;
+import com.arthur.projeto2.repository.ImovelRepository;
+
 import com.arthur.projeto2.model.TipoImovelModel;
 import com.arthur.projeto2.repository.TipoImovelRepository;
 
@@ -16,6 +19,9 @@ public class TipoImovelService {
 
     @Autowired
     private TipoImovelRepository repository;
+
+    @Autowired
+    private ImovelRepository imovelRepository;
 
     public List<TipoImovelModel> getAll() {
         return repository.findAll();
@@ -46,6 +52,9 @@ public class TipoImovelService {
     }
 
     public void delete(Integer id) {
+        if (imovelRepository.existsByTipoImovelId(id)) {
+            throw new RegraNegocioException("Não é possível excluir este tipo de imóvel: existem imóveis vinculados a ele.");
+        }
         repository.deleteById(id);
     }
 

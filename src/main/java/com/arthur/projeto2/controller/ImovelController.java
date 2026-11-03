@@ -1,5 +1,6 @@
 package com.arthur.projeto2.controller;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -25,12 +26,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.arthur.projeto2.dtos.PaginaDTO;
 import com.arthur.projeto2.dtos.SaberMaisDTO;
 import com.arthur.projeto2.dtos.StatusImovelDTO;
+import com.arthur.projeto2.model.FinalidadeImovel;
 import com.arthur.projeto2.model.ImovelModel;
+import com.arthur.projeto2.model.StatusImovel;
 import com.arthur.projeto2.services.EmailService;
 import com.arthur.projeto2.services.FotoImovelService;
 import com.arthur.projeto2.services.ImovelService;
@@ -70,6 +75,26 @@ public class ImovelController {
     @GetMapping("/imoveis-page")
     public Page<ImovelModel> getPosts(Pageable pageable) {
         return service.getAll(pageable);
+    }
+
+    /**
+     * Vitrine: GET /imoveis/buscar?status=DISPONIVEL&bairroId=1&finalidade=VENDA
+     * &precoMin=100000&precoMax=500000&ordem=preco_asc&page=0&size=9
+     * Todos os filtros são opcionais e podem ser combinados.
+     * ordem: recentes (padrão), preco_asc ou preco_desc.
+     */
+    @GetMapping("/buscar")
+    public PaginaDTO<ImovelModel> buscar(@RequestParam(required = false) StatusImovel status,
+                                         @RequestParam(required = false) Integer bairroId,
+                                         @RequestParam(required = false) Integer tipoId,
+                                         @RequestParam(required = false) FinalidadeImovel finalidade,
+                                         @RequestParam(required = false) BigDecimal precoMin,
+                                         @RequestParam(required = false) BigDecimal precoMax,
+                                         @RequestParam(required = false) String busca,
+                                         @RequestParam(defaultValue = "recentes") String ordem,
+                                         @RequestParam(defaultValue = "0") int page,
+                                         @RequestParam(defaultValue = "9") int size) {
+        return PaginaDTO.de(service.buscar(status, bairroId, tipoId, finalidade, precoMin, precoMax, busca, ordem, page, size));
     }
 
     @GetMapping("/{id}")

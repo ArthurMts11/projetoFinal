@@ -1,5 +1,8 @@
 package com.arthur.projeto2.config;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -13,6 +16,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.arthur.projeto2.security.JsonErroSeguranca;
 import com.arthur.projeto2.security.SecurityFilter;
@@ -28,8 +34,13 @@ import com.arthur.projeto2.security.TokenService;
 public class SecurityConfig {
 
     private static final String[] ROTAS_API = {
-        "/public/**", "/imoveis/**", "/api/**", "/bairros/**", "/tipos-imoveis/**", "/fotos/**"
+        "/public/**", "/imoveis/**", "/api/**", "/bairros/**", "/tipos-imoveis/**", "/fotos/**",
+        "/ofertas/**", "/contratos/**", "/favoritos/**", "/dashboard/**"
     };
+
+    // Endereço do front Angular (ng serve). Vários separados por vírgula.
+    @Value("${app.cors.origens:http://localhost:4200}")
+    private String origensPermitidas;
 
     private static final String[] CADASTROS_PUBLICOS = {
         "/imoveis/**", "/bairros/**", "/tipos-imoveis/**", "/fotos/**"
@@ -43,15 +54,26 @@ public class SecurityConfig {
             .securityMatcher(ROTAS_API)
             .authorizeHttpRequests(auth -> auth
                 // Público: login, consultas e o "saber mais" do cliente
-                .requestMatchers(HttpMethod.POST, "/public/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/public/login", "/public/cadastro").permitAll()
                 .requestMatchers(HttpMethod.GET, CADASTROS_PUBLICOS).permitAll()
                 .requestMatchers(HttpMethod.POST, "/imoveis/sabermais/*").permitAll()
                 // Qualquer usuário logado (ADMIN ou CLIENTE)
                 .requestMatchers(HttpMethod.PATCH, "/imoveis/*/status").authenticated()
+                // Área do cliente
+                .requestMatchers("/favoritos/**").hasRole("CLIENTE")
+                .requestMatchers(HttpMethod.POST, "/ofertas").hasRole("CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/ofertas/minhas").hasRole("CLIENTE")
+                .requestMatchers(HttpMethod.PATCH, "/ofertas/*/cancelar").hasRole("CLIENTE")
+                .requestMatchers(HttpMethod.GET, "/contratos/meus").hasRole("CLIENTE")
+                .requestMatchers(HttpMethod.PATCH, "/contratos/*/assinar").hasRole("CLIENTE")
+                // PDF: admin ou o cliente dono do contrato (conferido no ContratoService)
+                .requestMatchers(HttpMethod.GET, "/contratos/*/pdf").authenticated()
                 // Todo o resto (cadastrar/alterar/remover imóveis, gerenciar usuários...)
                 .anyRequest().hasRole("ADMIN")
             )
             // Lê e valida o JWT antes das regras acima serem aplicadas
+            // Libera o front (outra origem) a chamar a API; o preflight OPTIONS passa antes das regras
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .addFilterBefore(new SecurityFilter(tokenService), UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(erros)
@@ -97,6 +119,20 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(origensPermitidas.split("\\s*,\\s*")));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        // Para o front ler o nome do arquivo no download do PDF
+        config.setExposedHeaders(List.of("Content-Disposition"));
+        config.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean

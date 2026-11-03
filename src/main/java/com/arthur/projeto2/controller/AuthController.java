@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.arthur.projeto2.dtos.CadastroDTO;
 import com.arthur.projeto2.dtos.LoginDTO;
+import com.arthur.projeto2.exceptions.RegraNegocioException;
+import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
 import com.arthur.projeto2.repository.UsuarioRepository;
 import com.arthur.projeto2.security.LoginRateLimiter;
@@ -68,6 +71,21 @@ public class AuthController {
 
         rateLimiter.registrarSucesso(ip);
         return ResponseEntity.ok(Map.of("token", tokenService.gerarToken(usuario.get())));
+    }
+
+    /** Cadastro público: cria sempre um CLIENTE e já devolve o token (entra direto). */
+    @PostMapping("/cadastro")
+    public ResponseEntity<Map<String, String>> cadastro(@Valid @RequestBody CadastroDTO dados) {
+        if (repository.existsByEmailIgnoreCase(dados.email().trim())) {
+            throw new RegraNegocioException("Já existe uma conta com este e-mail. Faça login.");
+        }
+        UsuarioModel novo = new UsuarioModel();
+        novo.setNome(dados.nome().trim());
+        novo.setEmail(dados.email().trim());
+        novo.setSenha(passwordEncoder.encode(dados.senha()));
+        novo.setTipo(TipoUsuario.CLIENTE);
+        novo = repository.save(novo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("token", tokenService.gerarToken(novo)));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
