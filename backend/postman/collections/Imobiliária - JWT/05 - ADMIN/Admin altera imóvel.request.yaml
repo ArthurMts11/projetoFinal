@@ -1,0 +1,24 @@
+$kind: http-request
+method: PUT
+url: '{{baseUrl}}/imoveis/{{novoImovelId}}'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "titulo": "Casa teste JWT editada",
+      "finalidade": "VENDA",
+      "tipoImovel": {"id": 1},
+      "bairro": {"id": 1},
+      "usuario": {"id": 12}
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 204", function () {
+          pm.response.to.have.status(204);
+      });

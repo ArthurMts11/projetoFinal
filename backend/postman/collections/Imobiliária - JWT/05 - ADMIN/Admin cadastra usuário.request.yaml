@@ -1,0 +1,23 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/usuarios'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nome": "Novo Usuário",
+      "email": "novo{{$timestamp}}@teste.com",
+      "senha": "123456",
+      "tipo": "CLIENTE"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 201", function () {
+          pm.response.to.have.status(201);
+      });

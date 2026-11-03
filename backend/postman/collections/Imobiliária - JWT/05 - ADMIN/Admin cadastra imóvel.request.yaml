@@ -1,0 +1,30 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/imoveis'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "titulo": "Casa teste JWT",
+      "finalidade": "VENDA",
+      "tipoImovel": {"id": 1},
+      "bairro": {"id": 1},
+      "usuario": {"id": 12}
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 201", function () {
+          pm.response.to.have.status(201);
+      });
+      var location = pm.response.headers.get("Location");
+      if (location) {
+          var parts = location.split("/");
+          var id = parts[parts.length - 1];
+          pm.collectionVariables.set("novoImovelId", id);
+      }

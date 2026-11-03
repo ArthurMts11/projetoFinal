@@ -1,0 +1,24 @@
+$kind: collection
+name: Imobiliária - JWT
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{tokenAdmin}}'
+variables:
+  - key: baseUrl
+    value: 'http://localhost:8080'
+  - key: adminEmail
+    value: admin.jwt@teste.com
+  - key: clienteEmail
+    value: cliente.jwt@teste.com
+  - key: senha
+    value: Senha@123
+  - key: tokenAdmin
+    value: ''
+  - key: tokenCliente
+    value: ''
+  - key: imovelId
+    value: '4'
+  - key: novoImovelId
+    value: ''

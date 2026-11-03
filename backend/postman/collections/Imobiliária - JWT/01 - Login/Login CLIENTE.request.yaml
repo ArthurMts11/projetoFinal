@@ -1,0 +1,25 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/public/login'
+order: 2000
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{clienteEmail}}",
+      "senha": "{{senha}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 200", function () {
+          pm.response.to.have.status(200);
+      });
+      var json = pm.response.json();
+      pm.collectionVariables.set("tokenCliente", json.token);

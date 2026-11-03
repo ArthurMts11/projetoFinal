@@ -1,0 +1,25 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/imoveis'
+order: 2000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{tokenCliente}}'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "titulo": "Teste"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 403", function () {
+          pm.response.to.have.status(403);
+      });

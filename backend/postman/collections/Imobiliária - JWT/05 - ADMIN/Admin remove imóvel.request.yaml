@@ -1,0 +1,11 @@
+$kind: http-request
+method: DELETE
+url: '{{baseUrl}}/imoveis/{{novoImovelId}}'
+order: 5000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status 204", function () {
+          pm.response.to.have.status(204);
+      });

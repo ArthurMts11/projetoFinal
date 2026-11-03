@@ -1,0 +1,100 @@
+====================================================
+ COMO RODAR ESTE PROJETO NO WINDOWS (PowerShell)
+====================================================
+
+Este arquivo tem os comandos para instalar tudo que o projeto precisa
+(Java, Maven e MySQL) e rodar a aplicacao. Copie e cole os blocos
+abaixo, um passo de cada vez, num PowerShell.
+
+IMPORTANTE ANTES DE COMECAR:
+- Abra o PowerShell como Administrador (clique direito no icone do
+  PowerShell > "Executar como administrador").
+- Extraia a pasta do projeto em algum lugar (ex: C:\projeto2).
+- Depois de extrair, entre na pasta do projeto no PowerShell, por
+  exemplo:
+      cd C:\projeto2
+  (troque pelo caminho onde voce realmente extraiu)
+- Se for a PRIMEIRA VEZ instalando o Docker Desktop nessa maquina, o
+  Windows provavelmente vai pedir para reiniciar o computador (por
+  causa do WSL2). Reinicie, abra o Docker Desktop uma vez e espere ele
+  terminar de carregar (o icone da baleia fica paradinho na barra de
+  tarefas, sem "carregando"), e so entao continue a partir do PASSO 3.
+
+
+----------------------------------------------------
+PASSO 1 - Instalar Java 25, Maven e Docker Desktop
+----------------------------------------------------
+
+winget install --id EclipseAdoptium.Temurin.25.JDK -e
+winget install --id Apache.Maven -e
+winget install --id Docker.DockerDesktop -e
+
+# Depois deste passo, FECHE e ABRA o PowerShell de novo, para os
+# comandos "java" e "mvn" serem reconhecidos no terminal.
+
+
+----------------------------------------------------
+PASSO 2 - Conferir se instalou certo
+----------------------------------------------------
+
+java -version
+mvn -version
+docker --version
+
+# Se algum desses comandos der erro "nao e reconhecido como nome de
+# cmdlet", feche e abra o PowerShell de novo (ou reinicie o Windows)
+# e teste de novo.
+#
+# Se "winget install --id EclipseAdoptium.Temurin.25.JDK -e" der erro
+# dizendo que nao encontrou o pacote, rode:
+#     winget search Temurin
+# e use o --id que aparecer na lista (ou baixe manualmente em
+# https://adoptium.net/temurin/releases/?version=25).
+
+
+----------------------------------------------------
+PASSO 3 - Subir o banco MySQL (dentro de um container Docker)
+----------------------------------------------------
+
+docker run --name mysql-pw4 -e MYSQL_ROOT_PASSWORD=root -p 8889:3306 -d mysql:8
+
+# Espera o MySQL terminar de inicializar dentro do container (leva
+# uns 15 a 30 segundos na primeira vez que sobe)
+Start-Sleep -Seconds 25
+
+
+----------------------------------------------------
+PASSO 4 - Criar o banco e as tabelas (usa o schema.sql do projeto)
+----------------------------------------------------
+
+# Rode este comando de DENTRO da pasta do projeto (onde esta o
+# arquivo schema.sql)
+Get-Content .\schema.sql -Raw | docker exec -i mysql-pw4 mysql -uroot -proot
+
+
+----------------------------------------------------
+PASSO 5 - Rodar a aplicacao
+----------------------------------------------------
+
+# Rode este comando de DENTRO da pasta do projeto (onde esta o
+# arquivo pom.xml)
+mvn spring-boot:run
+
+# Espere aparecer no terminal uma linha parecida com:
+#     Tomcat started on port(s): 8080
+# A aplicacao fica rodando nessa janela do PowerShell. Para parar,
+# aperte Ctrl+C.
+#
+# Com a aplicacao rodando, ela fica disponivel em:
+#     http://localhost:8080
+
+
+----------------------------------------------------
+NAS PROXIMAS VEZES (depois da primeira instalacao)
+----------------------------------------------------
+
+# Nao precisa repetir os passos 1, 2 e 4. So estes dois comandos,
+# de dentro da pasta do projeto:
+
+docker start mysql-pw4
+mvn spring-boot:run
