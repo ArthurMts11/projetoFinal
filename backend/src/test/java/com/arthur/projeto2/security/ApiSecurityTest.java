@@ -1,8 +1,10 @@
 package com.arthur.projeto2.security;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -21,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -50,7 +53,7 @@ import com.arthur.projeto2.services.UsuarioService;
  */
 @WebMvcTest(controllers = { AuthController.class, ImovelController.class, UsuarioApiController.class })
 @Import({ SecurityConfig.class, JsonErroSeguranca.class, TokenService.class,
-        LoginRateLimiter.class, LoginSuccessHandler.class })
+        LoginRateLimiter.class, LoginSuccessHandler.class, ContatoRateLimiter.class })
 @TestPropertySource(properties = "app.jwt.secret=" + ApiSecurityTest.SEGREDO)
 class ApiSecurityTest {
 
@@ -126,6 +129,39 @@ class ApiSecurityTest {
     void buscarUmImovelNaoPrecisaDeToken() throws Exception {
         when(imovelService.find(1)).thenReturn(new ImovelModel());
         mvc.perform(get("/imoveis/1")).andExpect(status().isOk());
+    }
+
+    @Test
+    void vitrinePodeFiltrarSoOsImoveisEmDestaque() throws Exception {
+        when(imovelService.buscar(any(), any(), any(), any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(Page.empty());
+
+        mvc.perform(get("/imoveis/buscar").param("status", "DISPONIVEL").param("destaque", "true").param("size", "3"))
+                .andExpect(status().isOk());
+
+        verify(imovelService).buscar(eq(StatusImovel.DISPONIVEL), any(), any(), any(), any(), any(), any(),
+                eq(Boolean.TRUE), eq("recentes"), eq(0), eq(3));
+    }
+
+    @Test
+    void pedidoDeContatoAlemDoLimiteDevolve429ENaoEnviaEmail() throws Exception {
+        ImovelModel imovel = new ImovelModel();
+        imovel.setTitulo("Casa");
+        when(imovelService.find(7)).thenReturn(imovel);
+        when(fotoService.arquivosDasFotos(7, 6)).thenReturn(List.of());
+        String contato = "{\"nome\":\"Ana\",\"telefone\":\"55999990000\","
+                + "\"email\":\"ana@exemplo.com\",\"mensagem\":\"Tenho interesse\"}";
+
+        for (int i = 0; i < ContatoRateLimiter.MAX_ENVIOS; i++) {
+            mvc.perform(post("/imoveis/sabermais/7").contentType(MediaType.APPLICATION_JSON).content(contato))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(post("/imoveis/sabermais/7").contentType(MediaType.APPLICATION_JSON).content(contato))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.erro").isNotEmpty());
+
+        verify(emailService, times(ContatoRateLimiter.MAX_ENVIOS))
+                .enviarEmailComTemplate(any(), any(), any(), any(), any());
     }
 
     // ---------- 401: rota protegida sem token ou com token ruim ----------

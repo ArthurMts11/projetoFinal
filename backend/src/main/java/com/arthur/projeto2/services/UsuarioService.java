@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.arthur.projeto2.dtos.UserDTO;
 import com.arthur.projeto2.exceptions.DadosInvalidosException;
@@ -13,6 +14,9 @@ import com.arthur.projeto2.exceptions.RecursoNaoEncontradoException;
 import com.arthur.projeto2.exceptions.RegraNegocioException;
 import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
+import com.arthur.projeto2.repository.OfertaRepository;
+import com.arthur.projeto2.repository.ImovelRepository;
+import com.arthur.projeto2.repository.FavoritoRepository;
 import com.arthur.projeto2.repository.UsuarioRepository;
 
 @Service
@@ -23,6 +27,15 @@ public class UsuarioService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private OfertaRepository ofertaRepository;
+
+    @Autowired
+    private ImovelRepository imovelRepository;
+
+    @Autowired
+    private FavoritoRepository favoritoRepository;
 
     public List<UsuarioModel> getAllUsers() {
         return repository.findAll();
@@ -101,6 +114,7 @@ public class UsuarioService {
     }
 
     /** Regra: um admin não pode excluir a si mesmo. */
+    @Transactional
     public void excluir(Integer id, String emailLogado) {
         UsuarioModel model = find(id);
         if (model == null) {
@@ -109,6 +123,16 @@ public class UsuarioService {
         if (model.getEmail().equalsIgnoreCase(emailLogado)) {
             throw new RegraNegocioException("Você não pode excluir o seu próprio usuário.");
         }
+        // Ofertas e contratos são histórico de negociação: não podem sumir junto com o usuário
+        if (ofertaRepository.existsByUsuarioId(id)) {
+            throw new RegraNegocioException(
+                    "Este usuário tem ofertas registradas (histórico de negociações) e não pode ser excluído.");
+        }
+        if (imovelRepository.existsByUsuarioId(id)) {
+            throw new RegraNegocioException(
+                    "Este usuário é responsável por imóveis cadastrados e não pode ser excluído.");
+        }
+        favoritoRepository.deleteByUsuarioId(id);
         repository.delete(model);
         repository.flush();
     }

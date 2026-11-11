@@ -25,7 +25,8 @@ public interface ImovelRepository extends JpaRepository<ImovelModel, Integer> {
             + " AND (:finalidade IS NULL OR i.finalidade = :finalidade)"
             + " AND (:precoMin IS NULL OR " + PRECO + " >= :precoMin)"
             + " AND (:precoMax IS NULL OR " + PRECO + " <= :precoMax)"
-            + " AND (:busca IS NULL OR LOWER(i.titulo) LIKE LOWER(CONCAT('%', :busca, '%')))";
+            + " AND (:busca IS NULL OR LOWER(i.titulo) LIKE LOWER(CONCAT('%', :busca, '%')))"
+            + " AND (:destaque IS NULL OR i.destaque = :destaque)";
 
     @Query(value = "SELECT i" + FILTROS
             + " ORDER BY CASE WHEN :ordem = 'preco_asc' THEN " + PRECO + " END ASC,"
@@ -38,6 +39,7 @@ public interface ImovelRepository extends JpaRepository<ImovelModel, Integer> {
                              @Param("precoMin") BigDecimal precoMin,
                              @Param("precoMax") BigDecimal precoMax,
                              @Param("busca") String busca,
+                             @Param("destaque") Boolean destaque,
                              @Param("ordem") String ordem,
                              Pageable pageable);
 
@@ -46,4 +48,6 @@ public interface ImovelRepository extends JpaRepository<ImovelModel, Integer> {
     boolean existsByBairroId(Integer bairroId);
 
     boolean existsByTipoImovelId(Integer tipoImovelId);
+
+    boolean existsByUsuarioId(Integer usuarioId);
 }

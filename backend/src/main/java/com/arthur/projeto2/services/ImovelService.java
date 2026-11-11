@@ -55,11 +55,12 @@ public class ImovelService {
 
     /** Vitrine e listagem do admin: filtros combináveis, ordenação por preço e paginação. */
     public Page<ImovelModel> buscar(StatusImovel status, Integer bairroId, Integer tipoId, FinalidadeImovel finalidade,
-            BigDecimal precoMin, BigDecimal precoMax, String busca, String ordem, int pagina, int tamanho) {
+            BigDecimal precoMin, BigDecimal precoMax, String busca, Boolean destaque, String ordem, int pagina,
+            int tamanho) {
         String texto = busca == null || busca.isBlank() ? null : busca.trim();
         String ordenacao = ordem == null ? "recentes" : ordem;
         int tam = Math.max(1, Math.min(tamanho, 50));
-        return repository.buscar(status, bairroId, tipoId, finalidade, precoMin, precoMax, texto, ordenacao,
+        return repository.buscar(status, bairroId, tipoId, finalidade, precoMin, precoMax, texto, destaque, ordenacao,
                 PageRequest.of(Math.max(0, pagina), tam));
     }
 

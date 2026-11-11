@@ -22,5 +22,7 @@ public interface OfertaRepository extends JpaRepository<OfertaModel, Integer> {
 
     boolean existsByImovelId(Integer imovelId);
 
+    boolean existsByUsuarioId(Integer usuarioId);
+
     long countByStatus(StatusOferta status);
 }

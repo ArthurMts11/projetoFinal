@@ -36,10 +36,12 @@ import com.arthur.projeto2.dtos.StatusImovelDTO;
 import com.arthur.projeto2.model.FinalidadeImovel;
 import com.arthur.projeto2.model.ImovelModel;
 import com.arthur.projeto2.model.StatusImovel;
+import com.arthur.projeto2.security.ContatoRateLimiter;
 import com.arthur.projeto2.services.EmailService;
 import com.arthur.projeto2.services.FotoImovelService;
 import com.arthur.projeto2.services.ImovelService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -55,14 +57,17 @@ public class ImovelController {
     private final EmailService emailService;
     private final FotoImovelService fotoService;
     private final Map<String, String> imobiliaria;
+    private final ContatoRateLimiter contatoRateLimiter;
 
     public ImovelController(ImovelService service, EmailService emailService, FotoImovelService fotoService,
+                            ContatoRateLimiter contatoRateLimiter,
                             @Value("${app.imobiliaria.nome}") String nome,
                             @Value("${app.imobiliaria.telefone}") String telefone,
                             @Value("${app.imobiliaria.email}") String email) {
         this.service = service;
         this.emailService = emailService;
         this.fotoService = fotoService;
+        this.contatoRateLimiter = contatoRateLimiter;
         this.imobiliaria = Map.of("nome", nome, "telefone", telefone, "email", email);
     }
 
@@ -81,7 +86,7 @@ public class ImovelController {
      * Vitrine: GET /imoveis/buscar?status=DISPONIVEL&bairroId=1&finalidade=VENDA
      * &precoMin=100000&precoMax=500000&ordem=preco_asc&page=0&size=9
      * Todos os filtros são opcionais e podem ser combinados.
-     * ordem: recentes (padrão), preco_asc ou preco_desc.
+     * ordem: recentes (padrão), preco_asc ou preco_desc. destaque=true traz só os destaques.
      */
     @GetMapping("/buscar")
     public PaginaDTO<ImovelModel> buscar(@RequestParam(required = false) StatusImovel status,
@@ -91,10 +96,11 @@ public class ImovelController {
                                          @RequestParam(required = false) BigDecimal precoMin,
                                          @RequestParam(required = false) BigDecimal precoMax,
                                          @RequestParam(required = false) String busca,
+                                         @RequestParam(required = false) Boolean destaque,
                                          @RequestParam(defaultValue = "recentes") String ordem,
                                          @RequestParam(defaultValue = "0") int page,
                                          @RequestParam(defaultValue = "9") int size) {
-        return PaginaDTO.de(service.buscar(status, bairroId, tipoId, finalidade, precoMin, precoMax, busca, ordem, page, size));
+        return PaginaDTO.de(service.buscar(status, bairroId, tipoId, finalidade, precoMin, precoMax, busca, destaque, ordem, page, size));
     }
 
     @GetMapping("/{id}")
@@ -138,7 +144,13 @@ public class ImovelController {
      * os dados do imóvel e uma mensagem da imobiliária (template email/saber-mais).
      */
     @PostMapping("/sabermais/{id}")
-    public ResponseEntity<Map<String, String>> saberMais(@PathVariable Integer id, @Valid @RequestBody SaberMaisDTO dados) {
+    public ResponseEntity<Map<String, String>> saberMais(@PathVariable Integer id, @Valid @RequestBody SaberMaisDTO dados,
+                                                         HttpServletRequest request) {
+        if (!contatoRateLimiter.permitir(request.getRemoteAddr())) {
+            log.info("Pedido de contato bloqueado pelo limite (ip {})", request.getRemoteAddr());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("erro", "Você já enviou vários pedidos. Aguarde alguns minutos e tente de novo."));
+        }
         ImovelModel imovel = service.find(id);
         if (imovel == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("erro", "Imóvel " + id + " não encontrado."));
