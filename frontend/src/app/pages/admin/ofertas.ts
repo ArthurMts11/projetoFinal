@@ -27,7 +27,7 @@ const SITUACOES: StatusOferta[] = ['PENDENTE', 'ACEITA', 'EM_ESPERA', 'RECUSADA'
         </div>
       </div>
 
-      <div class="filtro-abas barra-ferramentas" role="group" aria-label="Filtrar por situação">
+      <div class="filtro-abas" role="group" aria-label="Filtrar por situação">
         <button type="button" [class.ativo]="!filtro()" (click)="filtrar('')">Todas</button>
         @for (s of situacoes; track s) {
           <button

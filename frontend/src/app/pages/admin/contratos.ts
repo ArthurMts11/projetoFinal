@@ -8,7 +8,7 @@ import { mensagemDeErro } from '../../core/erros';
 import { Contrato, StatusContrato } from '../../core/models';
 import { ROTULO_FINALIDADE, ROTULO_STATUS_CONTRATO } from '../../core/rotulos';
 import { ToastService } from '../../core/toast.service';
-import { baixarArquivo } from '../../core/util';
+import { baixarArquivo, contarPorStatus } from '../../core/util';
 import { Badge } from '../../shared/badge';
 import { Estado } from '../../shared/estado';
 import { Icone } from '../../shared/icone';
@@ -28,11 +28,29 @@ import { Icone } from '../../shared/icone';
         </div>
       </div>
 
-      <div class="filtro-abas barra-ferramentas" role="group" aria-label="Filtrar por situação">
-        <button type="button" [class.ativo]="!filtro()" (click)="filtro.set('')">Todos</button>
+      <div class="filtro-abas" role="group" aria-label="Filtrar por situação">
+        <button
+          type="button"
+          [class.ativo]="!filtro()"
+          [attr.aria-pressed]="!filtro()"
+          (click)="filtro.set('')"
+        >
+          Todos
+          @if (!carregando()) {
+            <span class="aba-contagem">{{ contagens().get('') ?? 0 }}</span>
+          }
+        </button>
         @for (s of situacoes; track s) {
-          <button type="button" [class.ativo]="filtro() === s" (click)="filtro.set(s)">
+          <button
+            type="button"
+            [class.ativo]="filtro() === s"
+            [attr.aria-pressed]="filtro() === s"
+            (click)="filtro.set(s)"
+          >
             {{ rotuloStatus[s] }}
+            @if (!carregando()) {
+              <span class="aba-contagem">{{ contagens().get(s) ?? 0 }}</span>
+            }
           </button>
         }
       </div>
@@ -141,6 +159,7 @@ export class ContratosAdmin {
   protected readonly visiveis = computed(() =>
     this.filtro() ? this.lista().filter((c) => c.status === this.filtro()) : this.lista(),
   );
+  protected readonly contagens = computed(() => contarPorStatus(this.lista()));
 
   constructor() {
     this.carregar();
@@ -178,13 +197,13 @@ export class ContratosAdmin {
   protected async aprovar(c: Contrato): Promise<void> {
     const ok = await this.confirmacao.perguntar({
       titulo: 'Aprovar e enviar contrato',
-      mensagem: `Aprovar o contrato nº ${c.id} e enviar para ${c.oferta.usuario.nome} (${c.oferta.usuario.email})? O cliente recebe um e-mail e poderá assinar.`,
+      mensagem: `Aprovar o contrato nº ${c.id} e enviar para ${c.oferta.usuario.nome} (${c.oferta.usuario.email})? O contrato fica disponível para assinatura em "Contratos", e um aviso é enviado por e-mail.`,
       botao: 'Aprovar e enviar',
     });
     if (!ok) return;
     this.api.aprovar(c.id).subscribe({
       next: () => {
-        this.toast.sucesso('Contrato aprovado e enviado ao cliente.');
+        this.toast.sucesso('Contrato aprovado. O cliente já pode assinar.');
         this.carregar();
       },
       error: async (e) => this.toast.erro(await mensagemDeErro(e, 'O contrato')),

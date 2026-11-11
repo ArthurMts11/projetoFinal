@@ -1,0 +1,5 @@
+# Capturas e logs dos testes no navegador (Playwright)
+.playwright-mcp/
+
+# macOS
+.DS_Store

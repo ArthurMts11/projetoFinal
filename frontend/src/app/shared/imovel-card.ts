@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -7,31 +7,39 @@ import { ROTULO_FINALIDADE } from '../core/rotulos';
 import { precoDoImovel, urlCapa } from '../core/util';
 import { Badge } from './badge';
 import { Icone } from './icone';
+import { PlantaBaixa } from './planta-baixa';
 
-/** Card da vitrine: foto, tipo, bairro, cidade, valor e finalidade. */
+/** Card da vitrine: foto, preço, título, bairro e a ficha resumida do imóvel. */
 @Component({
   selector: 'app-imovel-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CurrencyPipe, Icone, Badge],
+  imports: [RouterLink, CurrencyPipe, DecimalPipe, Icone, Badge, PlantaBaixa],
   template: `
     <article class="card-imovel">
       <a
         [routerLink]="['/imovel', imovel().id]"
         class="card-imovel-foto"
-        [attr.aria-label]="'Ver ' + imovel().titulo"
+        tabindex="-1"
+        aria-hidden="true"
       >
         @if (capa() && !fotoQuebrada()) {
-          <img
-            [src]="capa()"
-            [alt]="imovel().titulo"
-            loading="lazy"
-            (error)="fotoQuebrada.set(true)"
-          />
+          <img [src]="capa()" alt="" loading="lazy" (error)="fotoQuebrada.set(true)" />
         } @else {
-          <div class="foto-padrao"><app-icone nome="casa" [tamanho]="44" /></div>
+          <div class="foto-padrao">
+            <app-planta-baixa
+              [quartos]="imovel().dormitorios ?? 0"
+              [banheiros]="imovel().banheiros ?? 0"
+              [vagas]="imovel().garagem ?? 0"
+              [terreno]="!imovel().areaConstruida && !imovel().dormitorios && !imovel().banheiros"
+            />
+            <span class="foto-padrao-legenda">Planta ilustrativa · sem foto</span>
+          </div>
         }
-        <span class="etiqueta-finalidade" [class.aluguel]="imovel().finalidade === 'ALUGUEL'">
-          {{ rotuloFinalidade[imovel().finalidade] }}
+        <span class="etiquetas-foto">
+          <span class="etiqueta-finalidade">{{ rotuloFinalidade[imovel().finalidade] }}</span>
+          @if (imovel().status !== 'DISPONIVEL') {
+            <app-badge [status]="imovel().status" />
+          }
         </span>
       </a>
       @if (mostrarFavorito()) {
@@ -43,41 +51,32 @@ import { Icone } from './icone';
           [attr.aria-label]="favorito() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
           (click)="alternarFavorito.emit(imovel())"
         >
-          <app-icone nome="coracao" [cheio]="favorito()" [tamanho]="20" />
+          <app-icone nome="coracao" [cheio]="favorito()" [tamanho]="18" />
         </button>
       }
       <div class="card-imovel-corpo">
-        <p class="card-imovel-tipo">
-          {{ imovel().tipoImovel.nome }}
-          @if (imovel().status !== 'DISPONIVEL') {
-            <app-badge [status]="imovel().status" />
+        <p class="card-imovel-preco">
+          {{ preco() | currency: 'BRL' : 'symbol' : '1.0-0' }}
+          @if (imovel().finalidade === 'ALUGUEL') {
+            <small>/mês</small>
           }
         </p>
         <h3>
           <a [routerLink]="['/imovel', imovel().id]">{{ imovel().titulo }}</a>
         </h3>
-        <p class="card-imovel-local">
-          <app-icone nome="local" [tamanho]="15" /> {{ imovel().bairro.nome }},
-          {{ imovel().bairro.cidade }}
-        </p>
-        <p class="card-imovel-preco">
-          {{ preco() | currency: 'BRL' }}
-          @if (imovel().finalidade === 'ALUGUEL') {
-            <small>/mês</small>
+        <p class="card-imovel-local">{{ imovel().bairro.nome }}, {{ imovel().bairro.cidade }}</p>
+        <!-- Resumo curto para caber em uma linha; banheiros e área construída ficam no detalhe -->
+        <ul class="card-imovel-atributos" aria-label="Características">
+          @if (imovel().areaTotal) {
+            <li>{{ imovel().areaTotal | number: '1.0-1' }} m²</li>
           }
-        </p>
-        <ul class="card-imovel-atributos">
           @if (imovel().dormitorios) {
-            <li><app-icone nome="cama" [tamanho]="15" /> {{ imovel().dormitorios }}</li>
-          }
-          @if (imovel().banheiros) {
-            <li><app-icone nome="banho" [tamanho]="15" /> {{ imovel().banheiros }}</li>
+            <li>
+              {{ imovel().dormitorios }} {{ imovel().dormitorios === 1 ? 'quarto' : 'quartos' }}
+            </li>
           }
           @if (imovel().garagem) {
-            <li><app-icone nome="carro" [tamanho]="15" /> {{ imovel().garagem }}</li>
-          }
-          @if (imovel().areaTotal) {
-            <li><app-icone nome="area" [tamanho]="15" /> {{ imovel().areaTotal }} m²</li>
+            <li>{{ imovel().garagem }} {{ imovel().garagem === 1 ? 'vaga' : 'vagas' }}</li>
           }
         </ul>
       </div>

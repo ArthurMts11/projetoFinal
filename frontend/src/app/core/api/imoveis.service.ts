@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_URL } from '../config';
-import { FiltrosImovel, Imovel, Pagina, StatusImovel } from '../models';
+import { FiltrosImovel, Imovel, Pagina, PedidoDeContato, StatusImovel } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ImoveisService {
@@ -39,5 +39,10 @@ export class ImoveisService {
 
   excluir(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
+  }
+
+  /** Formulário público de contato: a API envia os detalhes do imóvel para o e-mail informado. */
+  pedirInformacoes(id: number, contato: PedidoDeContato): Observable<{ mensagem: string }> {
+    return this.http.post<{ mensagem: string }>(`${this.url}/sabermais/${id}`, contato);
   }
 }

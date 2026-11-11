@@ -29,6 +29,9 @@ export async function mensagemDeErro(erro: unknown, itemNaoEncontrado = 'O item'
       return doBackend ?? 'A operação não é permitida no estado atual.';
     case 429:
       return doBackend ?? 'Muitas tentativas. Aguarde alguns minutos.';
+    case 502:
+      // A API usa 502 quando um serviço externo falha (ex.: envio de e-mail) e explica o motivo
+      return doBackend ?? 'Um serviço externo falhou. Tente novamente em instantes.';
     default:
       return erro.status >= 500
         ? 'O servidor teve um problema ao processar o pedido. Tente novamente em instantes.'

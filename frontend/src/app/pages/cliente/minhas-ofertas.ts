@@ -8,7 +8,7 @@ import { mensagemDeErro } from '../../core/erros';
 import { Oferta, StatusOferta } from '../../core/models';
 import { ROTULO_FINALIDADE, ROTULO_STATUS_OFERTA } from '../../core/rotulos';
 import { ToastService } from '../../core/toast.service';
-import { urlCapa } from '../../core/util';
+import { contarPorStatus, urlCapa } from '../../core/util';
 import { Badge } from '../../shared/badge';
 import { Estado } from '../../shared/estado';
 import { Icone } from '../../shared/icone';
@@ -37,7 +37,7 @@ const EXPLICACAO: Record<StatusOferta, string> = {
         <a routerLink="/" class="btn btn-secundario">Ver imóveis</a>
       </div>
 
-      <div class="filtro-abas barra-ferramentas" role="group" aria-label="Filtrar por situação">
+      <div class="filtro-abas" role="group" aria-label="Filtrar por situação">
         @for (f of filtros; track f.valor) {
           <button
             type="button"
@@ -46,6 +46,9 @@ const EXPLICACAO: Record<StatusOferta, string> = {
             (click)="filtro.set(f.valor)"
           >
             {{ f.rotulo }}
+            @if (!carregando()) {
+              <span class="aba-contagem">{{ contagens().get(f.valor) ?? 0 }}</span>
+            }
           </button>
         }
       </div>
@@ -132,6 +135,7 @@ export class MinhasOfertas {
   protected readonly visiveis = computed(() =>
     this.filtro() ? this.ofertas().filter((o) => o.status === this.filtro()) : this.ofertas(),
   );
+  protected readonly contagens = computed(() => contarPorStatus(this.ofertas()));
 
   constructor() {
     this.carregar();

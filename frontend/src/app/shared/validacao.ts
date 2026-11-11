@@ -20,6 +20,7 @@ export class ErroCampo {
     if (e['required'])
       return `${this.nome()} é ${this.nome().startsWith('A ') ? 'obrigatória' : 'obrigatório'}.`;
     if (e['email']) return 'Informe um e-mail válido (ex.: nome@dominio.com).';
+    if (e['telefone']) return 'Informe o telefone com DDD (ex.: 55 99999-0000).';
     if (e['minlength'])
       return `${this.nome()} precisa ter pelo menos ${e['minlength'].requiredLength} caracteres.`;
     if (e['maxlength'])
@@ -37,4 +38,11 @@ export class ErroCampo {
 export function emailValido(controle: AbstractControl): ValidationErrors | null {
   const v = (controle.value ?? '').toString().trim();
   return !v || /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v) ? null : { email: true };
+}
+
+/** Telefone brasileiro com DDD: 10 ou 11 dígitos, aceitando espaços, traços e parênteses. */
+export function telefoneValido(controle: AbstractControl): ValidationErrors | null {
+  const v = (controle.value ?? '').toString().trim();
+  const digitos = v.replace(/\D/g, '');
+  return !v || (digitos.length >= 10 && digitos.length <= 11) ? null : { telefone: true };
 }

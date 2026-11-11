@@ -98,6 +98,7 @@ export interface FiltrosImovel {
   precoMin?: number | null;
   precoMax?: number | null;
   busca?: string;
+  destaque?: boolean;
   ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
   page?: number;
   size?: number;
@@ -120,4 +121,12 @@ export interface UsuarioToken {
   email: string;
   perfil: Perfil;
   expiraEm: number; // milissegundos
+}
+
+/** Corpo do POST /imoveis/sabermais/{id} (SaberMaisDTO no backend). */
+export interface PedidoDeContato {
+  nome: string;
+  telefone: string;
+  email: string;
+  mensagem: string;
 }

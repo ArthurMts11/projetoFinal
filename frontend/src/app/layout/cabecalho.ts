@@ -36,9 +36,9 @@ const MENU_ADMIN: ItemMenu[] = [
   template: `
     <header class="cabecalho">
       <div class="container cabecalho-conteudo">
-        <a routerLink="/" class="marca">
-          <span class="marca-simbolo"><app-icone nome="casa" [tamanho]="20" /></span>
-          <span>{{ nome }}</span>
+        <a routerLink="/" class="marca" [attr.aria-label]="nome + ', página inicial'">
+          <span class="marca-nome">Fogami</span>
+          <span class="marca-desc">Imobiliária</span>
         </a>
 
         <button
@@ -65,11 +65,10 @@ const MENU_ADMIN: ItemMenu[] = [
           <div class="menu-usuario">
             @if (auth.usuario(); as u) {
               <span class="menu-nome" [title]="u.email">
-                {{ u.nome }} <small>{{ u.perfil === 'ADMIN' ? 'Admin' : 'Cliente' }}</small>
+                {{ u.nome }}
+                <small>{{ u.perfil === 'ADMIN' ? 'Administrador' : 'Cliente' }}</small>
               </span>
-              <button type="button" class="btn btn-secundario btn-sm" (click)="sair()">
-                <app-icone nome="sair" [tamanho]="16" /> Sair
-              </button>
+              <button type="button" class="btn btn-secundario btn-sm" (click)="sair()">Sair</button>
             } @else {
               <a routerLink="/login" class="btn btn-primario btn-sm">Entrar</a>
             }

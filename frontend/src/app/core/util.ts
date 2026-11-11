@@ -25,3 +25,12 @@ export function baixarArquivo(blob: Blob, nome: string): void {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/** Quantos itens há em cada situação; a chave '' traz o total (aba "Todas"). */
+export function contarPorStatus(itens: readonly { status: string }[]): Map<string, number> {
+  const contagem = new Map<string, number>([['', itens.length]]);
+  for (const item of itens) {
+    contagem.set(item.status, (contagem.get(item.status) ?? 0) + 1);
+  }
+  return contagem;
+}

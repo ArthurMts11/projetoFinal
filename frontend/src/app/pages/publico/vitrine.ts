@@ -18,11 +18,13 @@ import { mensagemDeErro } from '../../core/erros';
 import { Bairro, FiltrosImovel, Imovel, Pagina, TipoImovel } from '../../core/models';
 import { ToastService } from '../../core/toast.service';
 import { Estado } from '../../shared/estado';
+import { Destaques } from '../../shared/destaques';
 import { ImovelCard } from '../../shared/imovel-card';
 import { Paginacao } from '../../shared/paginacao';
 import { ErroCampo } from '../../shared/validacao';
 
-const POR_PAGINA = 9;
+const POR_PAGINA = 12;
+const DESTAQUES = 3;
 
 // Preço mínimo não pode passar do máximo
 function faixaDePreco(grupo: AbstractControl): ValidationErrors | null {
@@ -40,7 +42,7 @@ function faixaDePreco(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-vitrine',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ImovelCard, Paginacao, Estado, ErroCampo],
+  imports: [ReactiveFormsModule, ImovelCard, Paginacao, Estado, ErroCampo, Destaques],
   templateUrl: './vitrine.html',
 })
 export class Vitrine {
@@ -58,6 +60,7 @@ export class Vitrine {
   protected readonly erro = signal<string | null>(null);
   protected readonly favoritos = signal<Set<number>>(new Set());
   protected readonly filtrosAbertos = signal(false);
+  protected readonly destaques = signal<Imovel[]>([]);
 
   protected readonly form = inject(FormBuilder).group(
     {
@@ -81,6 +84,11 @@ export class Vitrine {
     inject(TiposImovelService)
       .listar()
       .subscribe({ next: (t) => this.tipos.set(t), error: () => {} });
+    this.imoveis.buscar({ status: 'DISPONIVEL', destaque: true, size: DESTAQUES }).subscribe({
+      next: (r) => this.destaques.set(r.content),
+      // A faixa é complementar: se falhar, a vitrine segue sem ela (a grade mostra o erro, se houver)
+      error: (e) => console.warn('Não foi possível carregar os destaques', e),
+    });
     if (this.auth.isCliente()) {
       this.favoritosApi
         .ids()
@@ -178,6 +186,11 @@ export class Vitrine {
       },
       error: async (e) => this.toast.erro(await mensagemDeErro(e, 'O imóvel')),
     });
+  }
+
+  /** Destaques só na entrada da vitrine: primeira página e nenhum filtro aplicado. */
+  protected mostrarDestaques(): boolean {
+    return this.destaques().length > 0 && !this.temFiltro() && !this.filtrosAtuais.page;
   }
 
   protected temFiltro(): boolean {

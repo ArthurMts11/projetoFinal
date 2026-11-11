@@ -19,13 +19,14 @@ import { ROTULO_FINALIDADE, ROTULO_STATUS_OFERTA } from '../../core/rotulos';
 import { Estado } from '../../shared/estado';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
+Chart.defaults.font.family = "'Public Sans', system-ui, sans-serif";
 
 // Cores dos gráficos: uma cor só para comparar quantidades; azul/laranja para as duas finalidades
-const COR_BARRA = '#2a78d6';
-const COR_VENDA = '#2a78d6';
-const COR_ALUGUEL = '#eb6834';
-const TINTA_SUAVE = '#5b6b7b';
-const GRADE = '#edf0f3';
+const COR_BARRA = '#1f5f4a';
+const COR_VENDA = '#1f5f4a';
+const COR_ALUGUEL = '#c7843a';
+const TINTA_SUAVE = '#5e636e';
+const GRADE = '#ecece9';
 
 interface Linha {
   rotulo: string;
@@ -128,7 +129,7 @@ export class Painel {
           {
             data: linhas.map((l) => l.total),
             backgroundColor: COR_BARRA,
-            hoverBackgroundColor: '#1f5fae',
+            hoverBackgroundColor: '#164536',
             borderRadius: 4,
             borderSkipped: 'start',
             maxBarThickness: 22,
@@ -144,7 +145,7 @@ export class Painel {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1b2a3a',
+            backgroundColor: '#16181d',
             padding: 10,
             displayColors: false,
             callbacks: { label: (ctx) => `${ctx.parsed.x} ${unidade}` },
@@ -158,9 +159,9 @@ export class Painel {
             border: { display: false },
           },
           y: {
-            ticks: { color: '#1b2a3a', font: { size: 13 } },
+            ticks: { color: '#16181d', font: { size: 13 } },
             grid: { display: false },
-            border: { color: '#c3ccd5' },
+            border: { color: '#cfcfcb' },
           },
         },
       },

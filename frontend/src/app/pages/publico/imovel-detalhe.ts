@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -16,7 +16,6 @@ import { Router, RouterLink } from '@angular/router';
 import { FavoritosService, OfertasService } from '../../core/api/negocios.service';
 import { ImoveisService } from '../../core/api/imoveis.service';
 import { AuthService } from '../../core/auth.service';
-import { IMOBILIARIA } from '../../core/config';
 import { mensagemDeErro } from '../../core/erros';
 import { Imovel, TipoOferta } from '../../core/models';
 import { ROTULO_FINALIDADE, ROTULO_STATUS_IMOVEL } from '../../core/rotulos';
@@ -25,14 +24,25 @@ import { precoDoImovel, urlFoto } from '../../core/util';
 import { Badge } from '../../shared/badge';
 import { Estado } from '../../shared/estado';
 import { Icone } from '../../shared/icone';
+import { PlantaBaixa } from '../../shared/planta-baixa';
+import { ContatoImovel } from './contato-imovel';
 import { ErroCampo } from '../../shared/validacao';
-
-const MOEDA = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 @Component({
   selector: 'app-imovel-detalhe',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CurrencyPipe, ReactiveFormsModule, Estado, Icone, Badge, ErroCampo],
+  imports: [
+    RouterLink,
+    CurrencyPipe,
+    DecimalPipe,
+    ReactiveFormsModule,
+    Estado,
+    Icone,
+    Badge,
+    ErroCampo,
+    PlantaBaixa,
+    ContatoImovel,
+  ],
   templateUrl: './imovel-detalhe.html',
 })
 export class ImovelDetalhe {
@@ -68,10 +78,23 @@ export class ImovelDetalhe {
     mensagem: ['', [Validators.maxLength(2000)]],
   });
 
+  /** URLs que deram erro ao carregar (ex.: arquivo apagado do servidor): somem da galeria. */
+  private readonly fotosQuebradas = signal<ReadonlySet<string>>(new Set());
   protected readonly fotos = computed(() =>
-    (this.imovel()?.fotos ?? []).map((f) => urlFoto(f.url)),
+    (this.imovel()?.fotos ?? [])
+      .map((f) => urlFoto(f.url))
+      .filter((url) => !this.fotosQuebradas().has(url)),
   );
   protected readonly preco = computed(() => (this.imovel() ? precoDoImovel(this.imovel()!) : null));
+  /** "Rua X, 120 · Centro, Panambi/RS", pulando as partes que não foram cadastradas. */
+  protected readonly endereco = computed(() => {
+    const i = this.imovel();
+    if (!i) return '';
+    const rua = [i.endereco, i.numero].filter(Boolean).join(', ');
+    const cidade = [i.bairro.cidade, i.bairro.estado].filter(Boolean).join('/');
+    const local = [i.bairro.nome, cidade].filter(Boolean).join(', ');
+    return [rua, local].filter(Boolean).join(' · ');
+  });
   protected readonly caracteristicas = computed(() =>
     (this.imovel()?.caracteristicas ?? '')
       .split(',')
@@ -91,21 +114,6 @@ export class ImovelDetalhe {
 
   /** Regra: só imóveis disponíveis mostram o botão "Fazer oferta". */
   protected readonly podeOfertar = computed(() => this.imovel()?.status === 'DISPONIVEL');
-
-  /** "Entrar em contato": abre o e-mail com assunto e corpo já preenchidos. */
-  protected readonly linkContato = computed(() => {
-    const i = this.imovel();
-    if (!i) return '';
-    const valor = this.preco() != null ? MOEDA.format(this.preco()!) : 'a consultar';
-    const assunto = `Interesse no imóvel cód. ${i.id} - ${i.tipoImovel.nome} no ${i.bairro.nome}`;
-    const corpo =
-      `Olá, ${IMOBILIARIA.nome}!\n\n` +
-      `Tenho interesse no imóvel abaixo e gostaria de mais informações:\n\n` +
-      `Código: ${i.id}\nTipo: ${i.tipoImovel.nome}\nBairro: ${i.bairro.nome} - ${i.bairro.cidade}\n` +
-      `Valor: ${valor}${i.finalidade === 'ALUGUEL' ? ' por mês' : ''} (${ROTULO_FINALIDADE[i.finalidade]})\n\n` +
-      `Meu nome:\nTelefone para contato:\n`;
-    return `mailto:${IMOBILIARIA.email}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
-  });
 
   constructor() {
     effect(() => {
@@ -188,6 +196,12 @@ export class ImovelDetalhe {
       },
       error: async (e) => this.toast.erro(await mensagemDeErro(e)),
     });
+  }
+
+  protected fotoQuebrou(url: string): void {
+    this.fotosQuebradas.update((s) => new Set(s).add(url));
+    // A lista encolheu: mantém o índice dentro do limite
+    this.fotoAtual.set(Math.min(this.fotoAtual(), Math.max(0, this.fotos().length - 1)));
   }
 
   protected fotoAnterior(): void {
