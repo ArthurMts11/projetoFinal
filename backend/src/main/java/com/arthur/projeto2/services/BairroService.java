@@ -37,17 +37,30 @@ public class BairroService {
     }
 
     public BairroModel insert(BairroModel model) {
+        exigirNomeUnico(model);
         return repository.save(model);
     }
 
     public BairroModel update(BairroModel model) {
-        try {
-            if (find(model.getId()) != null) {
-                return repository.save(model);
-            }
+        if (find(model.getId()) == null) {
             return null;
+        }
+        // Fora do try: a regra precisa chegar ao controller como 409, não virar 404
+        exigirNomeUnico(model);
+        try {
+            return repository.save(model);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private void exigirNomeUnico(BairroModel model) {
+        if (repository.existeOutroComMesmoNome(model.getNome(), model.getCidade(), model.getId())) {
+            String cidade = model.getCidade() == null || model.getCidade().isBlank()
+                    ? "sem cidade informada"
+                    : model.getCidade().trim();
+            throw new RegraNegocioException(
+                    "Já existe o bairro \"" + model.getNome().trim() + "\" em " + cidade + ".");
         }
     }
 

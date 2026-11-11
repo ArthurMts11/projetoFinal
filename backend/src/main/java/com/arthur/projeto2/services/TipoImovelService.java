@@ -37,17 +37,27 @@ public class TipoImovelService {
     }
 
     public TipoImovelModel insert(TipoImovelModel model) {
+        exigirNomeUnico(model);
         return repository.save(model);
     }
 
     public TipoImovelModel update(TipoImovelModel model) {
-        try {
-            if (find(model.getId()) != null) {
-                return repository.save(model);
-            }
+        if (find(model.getId()) == null) {
             return null;
+        }
+        // Fora do try: a regra precisa chegar ao controller como 409, não virar 404
+        exigirNomeUnico(model);
+        try {
+            return repository.save(model);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private void exigirNomeUnico(TipoImovelModel model) {
+        if (repository.existeOutroComMesmoNome(model.getNome(), model.getId())) {
+            throw new RegraNegocioException(
+                    "Já existe um tipo de imóvel chamado \"" + model.getNome().trim() + "\". Use outro nome.");
         }
     }
 
