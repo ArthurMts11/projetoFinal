@@ -1,6 +1,6 @@
 // Formato dos objetos que a API devolve
 
-export type Perfil = 'ADMIN' | 'CLIENTE';
+export type Perfil = 'ADMIN' | 'CORRETOR' | 'CLIENTE';
 export type Finalidade = 'VENDA' | 'ALUGUEL';
 export type StatusImovel = 'DISPONIVEL' | 'RESERVADO' | 'VENDIDO' | 'ALUGADO' | 'INATIVO';
 export type TipoOferta = 'VENDA' | 'ALUGUEL';

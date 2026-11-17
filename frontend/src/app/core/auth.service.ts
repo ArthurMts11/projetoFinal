@@ -23,6 +23,7 @@ export class AuthService {
   readonly logado = computed(() => this.usuario() !== null);
   readonly isAdmin = computed(() => this.usuario()?.perfil === 'ADMIN');
   readonly isCliente = computed(() => this.usuario()?.perfil === 'CLIENTE');
+  readonly isCorretor = computed(() => this.usuario()?.perfil === 'CORRETOR');
 
   get token(): string | null {
     // Confere a validade a cada uso: token vencido é descartado
@@ -62,7 +63,14 @@ export class AuthService {
 
   /** Área inicial de cada perfil, usada depois do login. */
   areaInicial(perfil?: Perfil): string {
-    return (perfil ?? this.usuario()?.perfil) === 'ADMIN' ? '/admin/painel' : '/cliente/ofertas';
+    switch (perfil ?? this.usuario()?.perfil) {
+      case 'ADMIN':
+        return '/admin/painel';
+      case 'CORRETOR':
+        return '/corretor/painel';
+      default:
+        return '/cliente/ofertas';
+    }
   }
 
   private guardar(token: string): void {
