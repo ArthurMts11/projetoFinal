@@ -21,4 +21,6 @@ public interface ContratoRepository extends JpaRepository<ContratoModel, Integer
     long countByStatus(StatusContrato status);
 
     long countByStatusIn(Collection<StatusContrato> status);
+
+    boolean existsByCorretorId(Integer corretorId);
 }

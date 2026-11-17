@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.arthur.projeto2.services.DashboardService;
 
-/** Totais e dados dos gráficos do painel do admin. */
+/** Totais e dados dos gráficos dos painéis do admin e do corretor. */
 @RestController
 @RequestMapping("/dashboard")
 public class DashboardController {
@@ -22,5 +22,10 @@ public class DashboardController {
     @GetMapping
     public Map<String, Object> resumo() {
         return service.resumo();
+    }
+
+    @GetMapping("/corretor")
+    public Map<String, Object> resumoCorretor() {
+        return service.resumoCorretor();
     }
 }

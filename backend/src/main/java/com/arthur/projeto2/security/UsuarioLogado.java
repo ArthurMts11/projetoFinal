@@ -5,7 +5,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import com.arthur.projeto2.exceptions.AcessoNegadoException;
-import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
 import com.arthur.projeto2.repository.UsuarioRepository;
 
@@ -31,11 +30,4 @@ public class UsuarioLogado {
                 .orElseThrow(() -> new AcessoNegadoException("Usuário do token não existe mais."));
     }
 
-    public boolean isAdmin() {
-        return get().getTipo() == TipoUsuario.ADMIN;
-    }
-
-    public boolean isCorretor() {
-        return get().getTipo() == TipoUsuario.CORRETOR;
-    }
 }

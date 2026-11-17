@@ -22,7 +22,8 @@ import jakarta.validation.Valid;
 
 /**
  * CLIENTE: POST /ofertas, GET /ofertas/minhas, PATCH /ofertas/{id}/cancelar.
- * ADMIN: GET /ofertas?status=, PATCH /ofertas/{id}/aceitar e /recusar.
+ * ADMIN e CORRETOR: GET /ofertas?status=.
+ * CORRETOR: PATCH /ofertas/{id}/aceitar e /recusar.
  */
 @RestController
 @RequestMapping("/ofertas")
