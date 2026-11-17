@@ -31,7 +31,9 @@ describe('authInterceptor', () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
-    TestBed.inject(HttpClient).get(`${API_URL}/contratos`).subscribe({ error: () => undefined });
+    TestBed.inject(HttpClient)
+      .get(`${API_URL}/contratos`)
+      .subscribe({ error: () => undefined });
     TestBed.inject(HttpTestingController)
       .expectOne(`${API_URL}/contratos`)
       .flush({ status: 401, erro: 'Token inválido' }, { status: 401, statusText: 'Unauthorized' });

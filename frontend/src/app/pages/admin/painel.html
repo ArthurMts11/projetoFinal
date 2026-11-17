@@ -15,15 +15,24 @@
           <p class="kpi-valor">{{ d.imoveisDisponiveis }}</p>
           <p class="kpi-detalhe">de {{ d.totalImoveis }} cadastrados</p>
         </a>
+        <a class="kpi" routerLink="/admin/contratos" [queryParams]="{ status: 'EM_APROVACAO' }">
+          <p class="kpi-rotulo">Contratos em aprovação</p>
+          <p class="kpi-valor">{{ d.contratosEmAprovacao }}</p>
+          <p class="kpi-detalhe">preparados pelo corretor, aguardando você</p>
+        </a>
+        <a
+          class="kpi"
+          routerLink="/admin/contratos"
+          [queryParams]="{ status: 'AGUARDANDO_ASSINATURA' }"
+        >
+          <p class="kpi-rotulo">Aguardando assinatura</p>
+          <p class="kpi-valor">{{ d.contratosAguardandoAssinatura }}</p>
+          <p class="kpi-detalhe">aprovados, com o cliente</p>
+        </a>
         <a class="kpi" routerLink="/admin/ofertas" [queryParams]="{ status: 'PENDENTE' }">
           <p class="kpi-rotulo">Ofertas pendentes</p>
           <p class="kpi-valor">{{ d.ofertasPendentes }}</p>
-          <p class="kpi-detalhe">aguardando sua resposta</p>
-        </a>
-        <a class="kpi" routerLink="/admin/contratos">
-          <p class="kpi-rotulo">Contratos aguardando assinatura</p>
-          <p class="kpi-valor">{{ d.contratosAguardandoAssinatura }}</p>
-          <p class="kpi-detalhe">aprovados ou a aprovar</p>
+          <p class="kpi-detalhe">aguardando um corretor</p>
         </a>
       </div>
 
@@ -81,6 +90,39 @@
               </thead>
               <tbody>
                 @for (l of porSituacao(); track l.rotulo) {
+                  <tr>
+                    <td>{{ l.rotulo }}</td>
+                    <td class="num">{{ l.total }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <section class="cartao grafico-cartao" aria-labelledby="g-contratos">
+          <h2 id="g-contratos">Contratos por situação</h2>
+          <p class="texto-suave" style="margin: 0 0 8px">
+            {{ totalContratos() }} {{ totalContratos() === 1 ? 'contrato' : 'contratos' }} no total
+          </p>
+          <div class="grafico-area" [style.height.px]="altura(contratosPorSituacao())">
+            <canvas
+              #graficoContratos
+              role="img"
+              aria-label="Gráfico de barras: quantidade de contratos por situação"
+            ></canvas>
+          </div>
+          <details>
+            <summary>Ver como tabela</summary>
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th>Situação</th>
+                  <th class="num">Contratos</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of contratosPorSituacao(); track l.rotulo) {
                   <tr>
                     <td>{{ l.rotulo }}</td>
                     <td class="num">{{ l.total }}</td>

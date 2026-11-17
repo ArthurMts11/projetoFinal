@@ -23,7 +23,13 @@ const SITUACOES: StatusOferta[] = ['PENDENTE', 'ACEITA', 'EM_ESPERA', 'RECUSADA'
       <div class="pagina-cabecalho">
         <div>
           <h1>Ofertas</h1>
-          <p class="texto-suave">Aceite ou recuse as propostas dos clientes.</p>
+          <p class="texto-suave">
+            {{
+              podeResponder()
+                ? 'Aceite ou recuse as propostas dos clientes. Ao aceitar, o contrato vai para você preparar.'
+                : 'Propostas dos clientes. Quem aceita ou recusa são os corretores.'
+            }}
+          </p>
         </div>
       </div>
 
@@ -85,18 +91,18 @@ const SITUACOES: StatusOferta[] = ['PENDENTE', 'ACEITA', 'EM_ESPERA', 'RECUSADA'
                   <td data-rotulo="Data">{{ o.createdAt | date: 'dd/MM/yy HH:mm' }}</td>
                   <td data-rotulo="Situação"><app-badge [status]="o.status" /></td>
                   <td class="acoes">
-                    @if (o.status === 'PENDENTE') {
+                    @if (podeResponder() && o.status === 'PENDENTE') {
                       <button type="button" class="btn btn-sucesso btn-sm" (click)="aceitar(o)">
                         Aceitar
                       </button>
                     }
-                    @if (o.status === 'PENDENTE' || o.status === 'EM_ESPERA') {
+                    @if (podeResponder() && (o.status === 'PENDENTE' || o.status === 'EM_ESPERA')) {
                       <button type="button" class="btn btn-secundario btn-sm" (click)="recusar(o)">
                         Recusar
                       </button>
                     }
                     @if (o.status === 'ACEITA') {
-                      <a routerLink="/admin/contratos" class="btn btn-secundario btn-sm"
+                      <a [routerLink]="linkContratos()" class="btn btn-secundario btn-sm"
                         >Ver contrato</a
                       >
                     }
@@ -113,6 +119,8 @@ const SITUACOES: StatusOferta[] = ['PENDENTE', 'ACEITA', 'EM_ESPERA', 'RECUSADA'
 export class OfertasAdmin implements OnInit {
   /** ?status=PENDENTE (o card do painel abre já filtrado). */
   readonly status = input<string>();
+  /** Vem do "data" da rota: só o corretor aceita e recusa; o admin só consulta. */
+  readonly podeResponder = input(false);
 
   private readonly api = inject(OfertasService);
   private readonly confirmacao = inject(ConfirmacaoService);
@@ -126,6 +134,10 @@ export class OfertasAdmin implements OnInit {
   protected readonly situacoes = SITUACOES;
   protected readonly rotuloStatus = ROTULO_STATUS_OFERTA;
   protected readonly rotuloFinalidade = ROTULO_FINALIDADE;
+
+  protected linkContratos(): string {
+    return this.podeResponder() ? '/corretor/contratos' : '/admin/contratos';
+  }
 
   protected rotuloFiltro(): string {
     const f = this.filtro();
@@ -166,16 +178,14 @@ export class OfertasAdmin implements OnInit {
   protected async aceitar(o: Oferta): Promise<void> {
     const ok = await this.confirmacao.perguntar({
       titulo: 'Aceitar oferta',
-      mensagem: `Aceitar a oferta de ${o.usuario.nome} para "${o.imovel.titulo}"? O imóvel ficará reservado, as outras ofertas pendentes dele ficarão em espera e o contrato será gerado.`,
+      mensagem: `Aceitar a oferta de ${o.usuario.nome} para "${o.imovel.titulo}"? O imóvel ficará reservado, as outras ofertas pendentes dele ficarão em espera e o contrato será gerado para você preparar.`,
       botao: 'Aceitar oferta',
     });
     if (!ok) return;
     this.api.aceitar(o.id).subscribe({
       next: () => {
-        this.toast.sucesso(
-          'Oferta aceita. O contrato foi gerado e aguarda sua aprovação em "Contratos".',
-        );
-        this.carregar();
+        this.toast.sucesso('Oferta aceita. Complete o contrato e envie para aprovação.');
+        this.router.navigate(['/corretor/contratos'], { queryParams: { aba: 'preparar' } });
       },
       error: async (e) => {
         this.toast.erro(await mensagemDeErro(e, 'A oferta'));

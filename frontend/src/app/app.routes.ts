@@ -56,6 +56,37 @@ export const routes: Routes = [
     ],
   },
 
+  // Área do corretor
+  {
+    path: 'corretor',
+    canActivate: [perfilGuard('CORRETOR')],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'painel' },
+      {
+        path: 'painel',
+        title: 'Painel do corretor',
+        loadComponent: () => import('./pages/corretor/painel').then((m) => m.PainelCorretor),
+      },
+      {
+        path: 'ofertas',
+        title: 'Ofertas',
+        data: { podeResponder: true },
+        loadComponent: () => import('./pages/admin/ofertas').then((m) => m.OfertasAdmin),
+      },
+      {
+        path: 'contratos',
+        title: 'Contratos',
+        loadComponent: () => import('./pages/corretor/contratos').then((m) => m.ContratosCorretor),
+      },
+      {
+        path: 'contratos/:id',
+        title: 'Preparar contrato',
+        loadComponent: () =>
+          import('./pages/corretor/contrato-preparo').then((m) => m.ContratoPreparo),
+      },
+    ],
+  },
+
   // Área do admin
   {
     path: 'admin',

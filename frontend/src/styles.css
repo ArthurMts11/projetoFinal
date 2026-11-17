@@ -2487,3 +2487,161 @@ summary {
     gap: 2px;
   }
 }
+
+/* ---------- Contrato: trilha de etapas e preparo pelo corretor ---------- */
+
+.trilha {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  counter-reset: etapa;
+}
+
+.trilha li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-right: 8px;
+}
+
+/* Linha que liga uma etapa à próxima */
+.trilha li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: 30px;
+  right: 4px;
+  height: 2px;
+  background: var(--linha-forte);
+}
+
+.trilha li.feita:not(:last-child)::after {
+  background: var(--pinho);
+}
+
+.trilha-marca {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: 2px solid var(--linha-forte);
+  background: var(--superficie);
+  color: var(--nevoa);
+}
+
+.trilha li.feita .trilha-marca {
+  border-color: var(--pinho);
+  background: var(--pinho-claro);
+  color: var(--pinho);
+}
+
+.trilha li.atual .trilha-marca {
+  border-color: var(--pinho);
+  background: var(--pinho);
+  color: #fff;
+}
+
+.trilha-texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.trilha-texto strong {
+  font-size: 0.86rem;
+  color: var(--grafite);
+}
+
+.trilha li.atual .trilha-texto strong {
+  color: var(--tinta);
+}
+
+.trilha-texto small {
+  font-size: 0.76rem;
+  color: var(--nevoa);
+}
+
+.trilha-cancelada {
+  margin: 0 0 20px;
+  color: var(--perigo);
+  font-weight: 600;
+}
+
+.alerta-devolucao {
+  background: var(--alerta-fundo);
+  color: var(--alerta);
+}
+
+.contrato-partes {
+  margin-bottom: 16px;
+}
+
+.contrato-partes dl,
+.contrato-condicoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.contrato-partes dl .largo,
+.contrato-condicoes .largo {
+  grid-column: 1 / -1;
+}
+
+.contrato-partes dt,
+.contrato-condicoes dt {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--grafite);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.contrato-partes dd,
+.contrato-condicoes dd {
+  margin: 2px 0 0;
+}
+
+.contrato-partes dd small {
+  display: block;
+  color: var(--grafite);
+}
+
+.contrato-condicoes {
+  margin-bottom: 16px;
+}
+
+.contrato-condicoes dd {
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.aviso-leitura {
+  margin: 0 0 16px;
+  color: var(--info);
+  font-weight: 500;
+}
+
+.celula-devolucao {
+  color: var(--alerta);
+}
+
+@media (max-width: 520px) {
+  .trilha-texto small {
+    display: none;
+  }
+
+  .trilha-texto strong {
+    font-size: 0.78rem;
+  }
+}

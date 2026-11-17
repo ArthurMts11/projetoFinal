@@ -10,28 +10,28 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { BarController, BarElement, CategoryScale, Chart, LinearScale, Tooltip } from 'chart.js';
+import { Chart } from 'chart.js';
 
 import { DashboardService } from '../../core/api/negocios.service';
 import { mensagemDeErro } from '../../core/erros';
-import { Dashboard, StatusOferta } from '../../core/models';
-import { ROTULO_FINALIDADE, ROTULO_STATUS_OFERTA } from '../../core/rotulos';
+import { Dashboard } from '../../core/models';
+import {
+  ROTULO_FINALIDADE,
+  ROTULO_STATUS_CONTRATO,
+  ROTULO_STATUS_OFERTA,
+} from '../../core/rotulos';
 import { Estado } from '../../shared/estado';
+import {
+  LinhaGrafico,
+  alturaDoGrafico,
+  barrasHorizontais,
+  linhasPorSituacao,
+  somar,
+} from '../../shared/graficos';
 
-Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
-Chart.defaults.font.family = "'Public Sans', system-ui, sans-serif";
-
-// Cores dos gráficos: uma cor só para comparar quantidades; azul/laranja para as duas finalidades
-const COR_BARRA = '#1f5f4a';
+// Azul/laranja só na barra segmentada das duas finalidades
 const COR_VENDA = '#1f5f4a';
 const COR_ALUGUEL = '#c7843a';
-const TINTA_SUAVE = '#5e636e';
-const GRADE = '#ecece9';
-
-interface Linha {
-  rotulo: string;
-  total: number;
-}
 
 @Component({
   selector: 'app-painel',
@@ -48,26 +48,30 @@ export class Painel {
 
   private readonly canvasBairros = viewChild<ElementRef<HTMLCanvasElement>>('graficoBairros');
   private readonly canvasOfertas = viewChild<ElementRef<HTMLCanvasElement>>('graficoOfertas');
+  private readonly canvasContratos = viewChild<ElementRef<HTMLCanvasElement>>('graficoContratos');
   private graficos: Chart[] = [];
 
   /** Bairros do maior para o menor (barras ordenadas comparam melhor). */
-  protected readonly porBairro = computed<Linha[]>(() =>
+  protected readonly porBairro = computed<LinhaGrafico[]>(() =>
     Object.entries(this.dados()?.imoveisPorBairro ?? {})
       .map(([rotulo, total]) => ({ rotulo, total }))
       .sort((a, b) => b.total - a.total),
   );
 
   /** Situações das ofertas na ordem do fluxo (pendente → cancelada). */
-  protected readonly porSituacao = computed<Linha[]>(() =>
-    Object.entries(this.dados()?.ofertasPorSituacao ?? {}).map(([s, total]) => ({
-      rotulo: ROTULO_STATUS_OFERTA[s as StatusOferta] ?? s,
-      total,
-    })),
+  protected readonly porSituacao = computed<LinhaGrafico[]>(() =>
+    linhasPorSituacao(this.dados()?.ofertasPorSituacao, ROTULO_STATUS_OFERTA),
   );
 
-  protected readonly totalOfertas = computed(() =>
-    this.porSituacao().reduce((s, l) => s + l.total, 0),
+  protected readonly totalOfertas = computed(() => somar(this.porSituacao()));
+
+  /** Contratos na ordem do fluxo (rascunho → cancelado). */
+  protected readonly contratosPorSituacao = computed<LinhaGrafico[]>(() =>
+    linhasPorSituacao(this.dados()?.contratosPorSituacao, ROTULO_STATUS_CONTRATO),
   );
+
+  protected readonly totalContratos = computed(() => somar(this.contratosPorSituacao()));
+  protected readonly altura = alturaDoGrafico;
 
   /** Partes da barra segmentada de finalidade, com a porcentagem de cada uma. */
   protected readonly porFinalidade = computed(() => {
@@ -93,13 +97,13 @@ export class Painel {
     effect(() => {
       const bairros = this.canvasBairros();
       const ofertas = this.canvasOfertas();
-      if (!bairros || !ofertas || !this.dados()) return;
+      const contratos = this.canvasContratos();
+      if (!bairros || !ofertas || !contratos || !this.dados()) return;
       this.destruirGraficos();
       this.graficos.push(
-        this.barrasHorizontais(bairros.nativeElement, this.porBairro(), 'imóveis'),
-      );
-      this.graficos.push(
-        this.barrasHorizontais(ofertas.nativeElement, this.porSituacao(), 'ofertas'),
+        barrasHorizontais(bairros.nativeElement, this.porBairro(), 'imóveis'),
+        barrasHorizontais(ofertas.nativeElement, this.porSituacao(), 'ofertas'),
+        barrasHorizontais(contratos.nativeElement, this.contratosPorSituacao(), 'contratos'),
       );
     });
     inject(DestroyRef).onDestroy(() => this.destruirGraficos());
@@ -116,54 +120,6 @@ export class Painel {
       error: async (e) => {
         this.erro.set(await mensagemDeErro(e));
         this.carregando.set(false);
-      },
-    });
-  }
-
-  private barrasHorizontais(canvas: HTMLCanvasElement, linhas: Linha[], unidade: string): Chart {
-    return new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: linhas.map((l) => l.rotulo),
-        datasets: [
-          {
-            data: linhas.map((l) => l.total),
-            backgroundColor: COR_BARRA,
-            hoverBackgroundColor: '#164536',
-            borderRadius: 4,
-            borderSkipped: 'start',
-            maxBarThickness: 22,
-            categoryPercentage: 0.8,
-          },
-        ],
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#16181d',
-            padding: 10,
-            displayColors: false,
-            callbacks: { label: (ctx) => `${ctx.parsed.x} ${unidade}` },
-          },
-        },
-        scales: {
-          x: {
-            beginAtZero: true,
-            ticks: { precision: 0, color: TINTA_SUAVE },
-            grid: { color: GRADE },
-            border: { display: false },
-          },
-          y: {
-            ticks: { color: '#16181d', font: { size: 13 } },
-            grid: { display: false },
-            border: { color: '#cfcfcb' },
-          },
-        },
       },
     });
   }

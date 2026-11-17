@@ -3,7 +3,18 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_URL } from '../config';
-import { Contrato, Dashboard, Imovel, Oferta, StatusOferta, TipoOferta, Usuario } from '../models';
+import {
+  Contrato,
+  Dashboard,
+  DashboardCorretor,
+  Imovel,
+  Oferta,
+  PreparoContrato,
+  StatusContrato,
+  StatusOferta,
+  TipoOferta,
+  Usuario,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class OfertasService {
@@ -45,8 +56,25 @@ export class ContratosService {
   private readonly http = inject(HttpClient);
   private readonly url = `${API_URL}/contratos`;
 
-  todos(): Observable<Contrato[]> {
-    return this.http.get<Contrato[]>(this.url);
+  todos(status?: StatusContrato | ''): Observable<Contrato[]> {
+    return this.http.get<Contrato[]>(this.url, { params: status ? { status } : {} });
+  }
+
+  um(id: number): Observable<Contrato> {
+    return this.http.get<Contrato>(`${this.url}/${id}`);
+  }
+
+  /** Corretor completa valor final, prazo, vencimento e observações. */
+  preparar(id: number, dados: PreparoContrato): Observable<Contrato> {
+    return this.http.put<Contrato>(`${this.url}/${id}`, dados);
+  }
+
+  enviar(id: number): Observable<Contrato> {
+    return this.http.patch<Contrato>(`${this.url}/${id}/enviar`, {});
+  }
+
+  devolver(id: number, motivo: string): Observable<Contrato> {
+    return this.http.patch<Contrato>(`${this.url}/${id}/devolver`, { motivo });
   }
 
   meus(): Observable<Contrato[]> {
@@ -121,5 +149,9 @@ export class DashboardService {
 
   resumo(): Observable<Dashboard> {
     return this.http.get<Dashboard>(`${API_URL}/dashboard`);
+  }
+
+  resumoCorretor(): Observable<DashboardCorretor> {
+    return this.http.get<DashboardCorretor>(`${API_URL}/dashboard/corretor`);
   }
 }

@@ -6,7 +6,9 @@ const erro = (status: number, error: unknown = null) => new HttpErrorResponse({ 
 
 describe('mensagemDeErro', () => {
   it('409 mostra a regra de negócio que veio do backend', async () => {
-    const msg = await mensagemDeErro(erro(409, { status: 409, erro: 'Só é possível aprovar contratos em aprovação.' }));
+    const msg = await mensagemDeErro(
+      erro(409, { status: 409, erro: 'Só é possível aprovar contratos em aprovação.' }),
+    );
     expect(msg).toBe('Só é possível aprovar contratos em aprovação.');
   });
 
