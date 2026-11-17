@@ -8,6 +8,7 @@ import { AuthService } from '../../core/auth.service';
 import { ConfirmacaoService } from '../../core/confirmacao.service';
 import { mensagemDeErro } from '../../core/erros';
 import { Perfil, Usuario } from '../../core/models';
+import { ROTULO_PERFIL } from '../../core/rotulos';
 import { ToastService } from '../../core/toast.service';
 import { Estado } from '../../shared/estado';
 import { Icone } from '../../shared/icone';
@@ -71,21 +72,13 @@ import { ErroCampo, emailValido } from '../../shared/validacao';
                     <span
                       class="badge"
                       [class.badge-alerta]="u.tipo === 'ADMIN'"
-                      [class.badge-neutro]="u.tipo !== 'ADMIN'"
+                      [class.badge-info]="u.tipo === 'CORRETOR'"
+                      [class.badge-neutro]="u.tipo === 'CLIENTE'"
                     >
-                      {{ u.tipo === 'ADMIN' ? 'Admin' : 'Cliente' }}</span
+                      {{ rotuloPerfil[u.tipo] }}</span
                     >
                   </td>
                   <td class="acoes">
-                    <button
-                      type="button"
-                      class="btn btn-secundario btn-sm"
-                      (click)="trocarPerfil(u)"
-                      [disabled]="ehVoce(u)"
-                      [title]="ehVoce(u) ? 'Você não pode alterar o seu próprio perfil' : ''"
-                    >
-                      Tornar {{ u.tipo === 'ADMIN' ? 'cliente' : 'admin' }}
-                    </button>
                     <button type="button" class="btn btn-secundario btn-sm" (click)="editar(u)">
                       <app-icone nome="editar" [tamanho]="15" /> Editar
                     </button>
@@ -140,6 +133,10 @@ import { ErroCampo, emailValido } from '../../shared/validacao';
                   <span>Cliente</span></label
                 >
                 <label
+                  ><input type="radio" formControlName="tipo" value="CORRETOR" />
+                  <span>Corretor</span></label
+                >
+                <label
                   ><input type="radio" formControlName="tipo" value="ADMIN" />
                   <span>Admin</span></label
                 >
@@ -177,6 +174,8 @@ export class Usuarios {
   protected readonly erroSalvar = signal<string | null>(null);
   protected readonly busca = new FormControl('', { nonNullable: true });
 
+  protected readonly rotuloPerfil = ROTULO_PERFIL;
+
   protected readonly form = inject(FormBuilder).nonNullable.group({
     nome: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, emailValido]],
@@ -213,6 +212,7 @@ export class Usuarios {
   protected novo(): void {
     this.editando.set(null);
     this.form.reset({ nome: '', email: '', senha: '', tipo: 'CLIENTE' });
+    this.form.controls.tipo.enable();
     this.form.controls.senha.setValidators([Validators.required, Validators.minLength(6)]);
     this.form.controls.senha.updateValueAndValidity();
     this.erroSalvar.set(null);
@@ -222,6 +222,9 @@ export class Usuarios {
   protected editar(u: Usuario): void {
     this.editando.set(u);
     this.form.reset({ nome: u.nome, email: u.email, senha: '', tipo: u.tipo });
+    // O admin não troca o próprio perfil (perderia o acesso a esta tela)
+    if (this.ehVoce(u)) this.form.controls.tipo.disable();
+    else this.form.controls.tipo.enable();
     this.form.controls.senha.setValidators([Validators.minLength(6)]);
     this.form.controls.senha.updateValueAndValidity();
     this.erroSalvar.set(null);
@@ -251,23 +254,6 @@ export class Usuarios {
         this.salvando.set(false);
         this.erroSalvar.set(await mensagemDeErro(e, 'O usuário'));
       },
-    });
-  }
-
-  protected async trocarPerfil(u: Usuario): Promise<void> {
-    const novo: Perfil = u.tipo === 'ADMIN' ? 'CLIENTE' : 'ADMIN';
-    const ok = await this.confirmacao.perguntar({
-      titulo: 'Trocar perfil',
-      mensagem: `Alterar o perfil de ${u.nome} para ${novo === 'ADMIN' ? 'Admin' : 'Cliente'}?`,
-      botao: 'Trocar perfil',
-    });
-    if (!ok) return;
-    this.api.atualizar(u.id!, { nome: u.nome, email: u.email, tipo: novo }).subscribe({
-      next: () => {
-        this.toast.sucesso('Perfil alterado.');
-        this.carregar();
-      },
-      error: async (e) => this.toast.erro(await mensagemDeErro(e, 'O usuário')),
     });
   }
 
