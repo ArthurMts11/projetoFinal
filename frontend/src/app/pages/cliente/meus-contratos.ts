@@ -2,13 +2,14 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { ContratosService } from '../../core/api/negocios.service';
 import { mensagemDeErro } from '../../core/erros';
 import { Contrato } from '../../core/models';
 import { ROTULO_FINALIDADE } from '../../core/rotulos';
 import { ToastService } from '../../core/toast.service';
-import { baixarArquivo, urlCapa } from '../../core/util';
+import { abrirPdf, urlCapa } from '../../core/util';
 import { Badge } from '../../shared/badge';
 import { Estado } from '../../shared/estado';
 import { Icone } from '../../shared/icone';
@@ -22,9 +23,7 @@ import { Icone } from '../../shared/icone';
       <div class="pagina-cabecalho">
         <div>
           <h1>Meus contratos</h1>
-          <p class="texto-suave">
-            Contratos enviados pela imobiliária. Baixe o PDF, leia e assine.
-          </p>
+          <p class="texto-suave">Contratos enviados pela imobiliária. Abra o PDF, leia e assine.</p>
         </div>
       </div>
 
@@ -69,7 +68,7 @@ import { Icone } from '../../shared/icone';
                   [disabled]="baixando() === c.id"
                 >
                   <app-icone nome="pdf" [tamanho]="16" />
-                  {{ baixando() === c.id ? 'Baixando…' : 'Baixar PDF' }}
+                  {{ baixando() === c.id ? 'Abrindo…' : 'Abrir PDF' }}
                 </button>
                 @if (c.status === 'AGUARDANDO_ASSINATURA') {
                   <button
@@ -168,16 +167,11 @@ export class MeusContratos {
 
   protected baixar(c: Contrato): void {
     this.baixando.set(c.id);
-    this.api.pdf(c.id).subscribe({
-      next: (blob) => {
-        baixarArquivo(blob, `contrato-${c.id}.pdf`);
-        this.baixando.set(null);
-      },
-      error: async (e) => {
-        this.baixando.set(null);
-        this.toast.erro(await mensagemDeErro(e, 'O contrato'));
-      },
-    });
+    abrirPdf(
+      this.api.pdf(c.id).pipe(finalize(() => this.baixando.set(null))),
+      `contrato-${c.id}.pdf`,
+      async (e) => this.toast.erro(await mensagemDeErro(e, 'O contrato')),
+    );
   }
 
   protected abrirAssinatura(c: Contrato): void {

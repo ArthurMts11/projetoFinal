@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { ContratosService } from '../../core/api/negocios.service';
 import { ConfirmacaoService } from '../../core/confirmacao.service';
@@ -16,7 +17,7 @@ import { mensagemDeErro } from '../../core/erros';
 import { Contrato, StatusContrato } from '../../core/models';
 import { ROTULO_FINALIDADE } from '../../core/rotulos';
 import { ToastService } from '../../core/toast.service';
-import { baixarArquivo } from '../../core/util';
+import { abrirPdf } from '../../core/util';
 import { Badge } from '../../shared/badge';
 import { Estado } from '../../shared/estado';
 import { Icone } from '../../shared/icone';
@@ -135,7 +136,7 @@ const MAX_MOTIVO = 500;
                       class="btn btn-secundario btn-sm"
                       (click)="baixar(c)"
                       [disabled]="baixando() === c.id"
-                      [attr.aria-label]="'Baixar PDF do contrato ' + c.id"
+                      [attr.aria-label]="'Abrir PDF do contrato ' + c.id"
                     >
                       <app-icone nome="pdf" [tamanho]="15" /> PDF
                     </button>
@@ -280,16 +281,11 @@ export class ContratosAdmin implements OnInit {
 
   protected baixar(c: Contrato): void {
     this.baixando.set(c.id);
-    this.api.pdf(c.id).subscribe({
-      next: (blob) => {
-        baixarArquivo(blob, `contrato-${c.id}.pdf`);
-        this.baixando.set(null);
-      },
-      error: async (e) => {
-        this.baixando.set(null);
-        this.toast.erro(await mensagemDeErro(e, 'O contrato'));
-      },
-    });
+    abrirPdf(
+      this.api.pdf(c.id).pipe(finalize(() => this.baixando.set(null))),
+      `contrato-${c.id}.pdf`,
+      async (e) => this.toast.erro(await mensagemDeErro(e, 'O contrato')),
+    );
   }
 
   protected async aprovar(c: Contrato): Promise<void> {

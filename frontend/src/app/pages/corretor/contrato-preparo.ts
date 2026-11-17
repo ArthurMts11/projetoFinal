@@ -18,7 +18,7 @@ import { mensagemDeErro } from '../../core/erros';
 import { Contrato, PreparoContrato } from '../../core/models';
 import { ROTULO_FINALIDADE } from '../../core/rotulos';
 import { ToastService } from '../../core/toast.service';
-import { baixarArquivo } from '../../core/util';
+import { abrirPdf } from '../../core/util';
 import { Badge } from '../../shared/badge';
 import { Estado } from '../../shared/estado';
 import { Icone } from '../../shared/icone';
@@ -193,7 +193,7 @@ const AVISO_SO_LEITURA: Partial<Record<Contrato['status'], string>> = {
                 }
               </dl>
               <button type="button" class="btn btn-secundario btn-sm" (click)="baixar()">
-                <app-icone nome="pdf" [tamanho]="15" /> Baixar PDF
+                <app-icone nome="pdf" [tamanho]="15" /> Ver PDF
               </button>
             </section>
           }
@@ -295,10 +295,9 @@ export class ContratoPreparo {
 
   protected baixar(): void {
     const c = this.contrato()!;
-    this.api.pdf(c.id).subscribe({
-      next: (blob) => baixarArquivo(blob, `contrato-${c.id}.pdf`),
-      error: async (e) => this.toast.erro(await mensagemDeErro(e, 'O contrato')),
-    });
+    abrirPdf(this.api.pdf(c.id), `contrato-${c.id}.pdf`, async (e) =>
+      this.toast.erro(await mensagemDeErro(e, 'O contrato')),
+    );
   }
 
   private mostrar(c: Contrato): void {

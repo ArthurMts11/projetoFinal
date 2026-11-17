@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { API_URL } from './config';
 import { Imovel } from './models';
 
@@ -24,6 +26,36 @@ export function baixarArquivo(blob: Blob, nome: string): void {
   a.download = nome;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/**
+ * Abre o PDF numa aba nova, no visualizador do navegador.
+ * A aba é aberta já no clique (antes da resposta da API) para o bloqueador de
+ * pop-ups não barrar; se mesmo assim for bloqueada, o arquivo é baixado.
+ */
+export function abrirPdf(
+  pdf: Observable<Blob>,
+  nomeArquivo: string,
+  aoFalhar: (erro: unknown) => void,
+): void {
+  const aba = window.open('', '_blank');
+  pdf.subscribe({
+    next: (conteudo) => {
+      const blob = new Blob([conteudo], { type: 'application/pdf' });
+      if (!aba) {
+        baixarArquivo(blob, nomeArquivo);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      aba.location.href = url;
+      // A aba precisa da URL enquanto carrega o PDF
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    },
+    error: (erro: unknown) => {
+      aba?.close();
+      aoFalhar(erro);
+    },
+  });
 }
 
 /** Quantos itens há em cada situação; a chave '' traz o total (aba "Todas"). */
