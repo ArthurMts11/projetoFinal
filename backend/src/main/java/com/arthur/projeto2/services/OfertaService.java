@@ -84,8 +84,8 @@ public class OfertaService {
     }
 
     /**
-     * Admin aceita: oferta ACEITA, imóvel RESERVADO, as outras pendentes do
-     * imóvel ficam EM_ESPERA e o contrato é gerado (aguardando aprovação do admin).
+     * Corretor aceita: oferta ACEITA, imóvel RESERVADO, as outras pendentes do
+     * imóvel ficam EM_ESPERA e o contrato é gerado em rascunho, com o corretor como responsável.
      */
     @Transactional
     public OfertaModel aceitar(Integer id) {
@@ -111,7 +111,7 @@ public class OfertaService {
         }
         repository.save(oferta);
 
-        ContratoModel contrato = contratoService.gerarParaOferta(oferta);
+        ContratoModel contrato = contratoService.gerarParaOferta(oferta, usuarioLogado.get());
         notificacao.enviar(oferta.getUsuario().getEmail(), "Sua oferta foi aceita",
                 "Olá, " + oferta.getUsuario().getNome() + "!\n\nSua oferta para o imóvel \""
                         + imovel.getTitulo() + "\" foi aceita. O contrato nº " + contrato.getId()
