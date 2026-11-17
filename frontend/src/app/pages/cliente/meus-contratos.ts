@@ -51,7 +51,9 @@ import { Icone } from '../../shared/icone';
                 <p class="item-cartao-meta">
                   <span
                     >{{ rotuloFinalidade[c.oferta.tipo] }}:
-                    <strong>{{ c.oferta.valorProposto | currency: 'BRL' }}</strong></span
+                    <strong>{{
+                      c.valorFinal ?? c.oferta.valorProposto | currency: 'BRL'
+                    }}</strong></span
                   >
                   <span>Enviado em {{ c.dataAprovacao | date: 'dd/MM/yyyy' }}</span>
                   @if (c.dataAssinatura) {
@@ -98,7 +100,7 @@ import { Icone } from '../../shared/icone';
           <h2 id="titulo-assinar">Assinar contrato nº {{ c.id }}</h2>
           <p>
             {{ c.oferta.imovel.titulo }} — {{ rotuloFinalidade[c.oferta.tipo] }} por
-            <strong>{{ c.oferta.valorProposto | currency: 'BRL' }}</strong
+            <strong>{{ c.valorFinal ?? c.oferta.valorProposto | currency: 'BRL' }}</strong
             >{{ c.oferta.tipo === 'ALUGUEL' ? ' por mês' : '' }}.
           </p>
           <p class="texto-suave">
