@@ -18,7 +18,7 @@ import com.arthur.projeto2.repository.ContratoRepository;
 import com.arthur.projeto2.repository.ImovelRepository;
 import com.arthur.projeto2.repository.OfertaRepository;
 
-/** Números do painel do admin. */
+/** Números dos painéis do admin e do corretor. */
 @Service
 public class DashboardService {
 
@@ -43,9 +43,7 @@ public class DashboardService {
             porBairro.merge(bairro, 1L, Long::sum);
         }
 
-        Map<String, Long> porSituacao = new LinkedHashMap<>();
-        Arrays.stream(StatusOferta.values()).forEach(s -> porSituacao.put(s.name(), 0L));
-        ofertas.forEach(o -> porSituacao.merge(o.getStatus().name(), 1L, Long::sum));
+        Map<String, Long> porSituacao = ofertasPorSituacao(ofertas);
 
         Map<String, Long> porFinalidade = new LinkedHashMap<>();
         Arrays.stream(FinalidadeImovel.values()).forEach(f -> porFinalidade.put(f.name(), 0L));
@@ -59,6 +57,33 @@ public class DashboardService {
         r.put("imoveisPorBairro", porBairro);
         r.put("ofertasPorSituacao", porSituacao);
         r.put("imoveisPorFinalidade", porFinalidade);
+        r.put("contratosEmAprovacao", contratoRepository.countByStatus(StatusContrato.EM_APROVACAO));
+        r.put("contratosPorSituacao", contratosPorSituacao());
         return r;
+    }
+
+    public Map<String, Object> resumoCorretor() {
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("ofertasPendentes", ofertaRepository.countByStatus(StatusOferta.PENDENTE));
+        r.put("contratosParaPreparar",
+                contratoRepository.countByStatusIn(List.of(StatusContrato.RASCUNHO, StatusContrato.DEVOLVIDO)));
+        r.put("contratosEmAprovacao", contratoRepository.countByStatus(StatusContrato.EM_APROVACAO));
+        r.put("ofertasPorSituacao", ofertasPorSituacao(ofertaRepository.findAll()));
+        r.put("contratosPorSituacao", contratosPorSituacao());
+        return r;
+    }
+
+    private Map<String, Long> ofertasPorSituacao(List<OfertaModel> ofertas) {
+        Map<String, Long> porSituacao = new LinkedHashMap<>();
+        Arrays.stream(StatusOferta.values()).forEach(s -> porSituacao.put(s.name(), 0L));
+        ofertas.forEach(o -> porSituacao.merge(o.getStatus().name(), 1L, Long::sum));
+        return porSituacao;
+    }
+
+    private Map<String, Long> contratosPorSituacao() {
+        Map<String, Long> porSituacao = new LinkedHashMap<>();
+        Arrays.stream(StatusContrato.values()).forEach(s -> porSituacao.put(s.name(), 0L));
+        contratoRepository.findAll().forEach(c -> porSituacao.merge(c.getStatus().name(), 1L, Long::sum));
+        return porSituacao;
     }
 }

@@ -68,10 +68,20 @@ CREATE TABLE `contratos` (
   `data_assinatura` datetime(6) DEFAULT NULL,
   `status` varchar(30) NOT NULL,
   `oferta_id` int NOT NULL,
+  `data_envio` datetime(6) DEFAULT NULL,
+  `dia_vencimento` int DEFAULT NULL,
+  `motivo_devolucao` text,
+  `observacoes` text,
+  `prazo_meses` int DEFAULT NULL,
+  `valor_final` decimal(12,2) DEFAULT NULL,
+  `corretor_id` int DEFAULT NULL,
+  `versao` bigint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `UK90snmgaot1ywcdr0j67i601e9` (`oferta_id`),
-  CONSTRAINT `FKiaeme61hk3iji24m00oy8nwwk` FOREIGN KEY (`oferta_id`) REFERENCES `ofertas` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `FKqu9i6nklupd57e6cafns24sfs` (`corretor_id`),
+  CONSTRAINT `FKiaeme61hk3iji24m00oy8nwwk` FOREIGN KEY (`oferta_id`) REFERENCES `ofertas` (`id`),
+  CONSTRAINT `FKqu9i6nklupd57e6cafns24sfs` FOREIGN KEY (`corretor_id`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -210,12 +220,13 @@ CREATE TABLE `ofertas` (
   `valor_proposto` decimal(12,2) NOT NULL,
   `imovel_id` int NOT NULL,
   `usuario_id` int NOT NULL,
+  `versao` bigint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `FK45qxoglntnt4fgdu3b8gdohj5` (`imovel_id`),
   KEY `FK9okk5sq8kbrf9nucsuu5rx0mq` (`usuario_id`),
   CONSTRAINT `FK45qxoglntnt4fgdu3b8gdohj5` FOREIGN KEY (`imovel_id`) REFERENCES `imoveis` (`id`),
   CONSTRAINT `FK9okk5sq8kbrf9nucsuu5rx0mq` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -292,12 +303,12 @@ CREATE TABLE `usuarios` (
   `nome` varchar(255) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `senha` varchar(255) DEFAULT NULL,
-  `tipo` enum('ADMIN','CLIENTE') NOT NULL,
+  `tipo` varchar(20) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -306,7 +317,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (1,'Teste Run','teste@gmail.com','$2a$10$sWrcR1ZYAY.fNbZvSW1K1uYV1jZcpt20.sCuZ.FqLbZ2JycOos3YO','ADMIN','2026-09-08 22:38:16','2026-09-08 22:38:16'),(3,'Caetano','caetano@gmail.com','$2a$10$fsbRSq6kmQYn2G1ab40K4OZra1tS2zwr7amy5MddPiHUUzO6arhW.','ADMIN','2026-09-08 22:38:16','2026-09-08 22:38:16'),(4,'Teste Automatizado','teste.automatizado+1788907184@example.com','$2a$10$cd.Ck1V9GDOxrCJkg3azf.E6dWw/y7mgtfnb4ptYcOWRiFQSAGXKm','CLIENTE','2026-09-09 01:39:45','2026-09-09 01:39:45'),(5,'Teste Final','teste.final+1788909236@example.com','$2a$10$L1XqFo0Y65x98yqx0EWLX.l2tchWpOkOFORXiseeuzMzxQ1/s.GgW','CLIENTE','2026-09-09 02:13:56','2026-09-09 02:13:56'),(6,'Teste Thunder Client','thunderclient.teste+1788912193@example.com','$2a$10$bIYP7TnefJc94a5K5XycI.H3MK1cYYtl1PFRvGh2QSK/T9dUWxlx2','CLIENTE','2026-09-09 03:03:14','2026-09-09 03:03:14'),(7,'Teste JSON','json.teste2+1788912647@example.com','$2a$10$IUeOGWLzihvokECWa4XHHOFaFuY79sKysBFAR5zrFjnyu7I0kBjbW','CLIENTE','2026-09-09 03:10:48','2026-09-09 03:10:48'),(8,'Teste Form','form.teste+1788912656@example.com','$2a$10$vmhIqjjCxoBdm2GMIZaZ1O7wmXE40DuwCgI73CyxO7mNyJc6jnuT.','CLIENTE','2026-09-09 03:10:57','2026-09-09 03:10:57'),(9,'Teste JSON','algum-email-novo@example.com','$2a$10$GH8tfZbKlsSuPlyzaU6ude3R1YbczlQNlMZs6cZqIUI7y.f/JHRKm','CLIENTE','2026-09-09 03:11:18','2026-09-09 03:11:18'),(10,'Teste DTO Editado','editado@example.com','$2a$10$nWAKQqKuGI3mlObFoRSKUO.IjL5jNyoUNPYankZhifZSsGTk9OMda','CLIENTE','2026-09-09 03:25:11','2026-09-09 03:25:18'),(11,'Usuário Postman Editado','postman.editado+1791332799@teste.com','$2a$10$k/sUdhallFe3F.cl5hbJhuqQ10GavqqeLOVJ.9aPL0huuAmsvESK2','CLIENTE','2026-10-07 03:26:39','2026-10-07 03:26:39'),(12,'Admin JWT','admin.jwt@teste.com','$2a$10$j36A67OWsPS89e/JH6lMOOJ4JNEIKu9ojxjp33yrQFuNO81AQqKwe','ADMIN','2026-10-27 22:22:39','2026-10-27 22:22:39'),(13,'Cliente JWT','cliente.jwt@teste.com','$2a$10$j36A67OWsPS89e/JH6lMOOJ4JNEIKu9ojxjp33yrQFuNO81AQqKwe','CLIENTE','2026-10-27 22:22:39','2026-10-27 22:22:39'),(15,'Cliente Dois','cliente2.jwt@teste.com','$2a$10$j36A67OWsPS89e/JH6lMOOJ4JNEIKu9ojxjp33yrQFuNO81AQqKwe','CLIENTE','2026-11-10 23:10:32','2026-11-10 23:10:32');
+INSERT INTO `usuarios` VALUES (1,'Teste Run','teste@gmail.com','$2a$10$sWrcR1ZYAY.fNbZvSW1K1uYV1jZcpt20.sCuZ.FqLbZ2JycOos3YO','ADMIN','2026-09-08 22:38:16','2026-09-08 22:38:16'),(3,'Caetano','caetano@gmail.com','$2a$10$fsbRSq6kmQYn2G1ab40K4OZra1tS2zwr7amy5MddPiHUUzO6arhW.','ADMIN','2026-09-08 22:38:16','2026-09-08 22:38:16'),(4,'Teste Automatizado','teste.automatizado+1788907184@example.com','$2a$10$cd.Ck1V9GDOxrCJkg3azf.E6dWw/y7mgtfnb4ptYcOWRiFQSAGXKm','CLIENTE','2026-09-09 01:39:45','2026-09-09 01:39:45'),(5,'Teste Final','teste.final+1788909236@example.com','$2a$10$L1XqFo0Y65x98yqx0EWLX.l2tchWpOkOFORXiseeuzMzxQ1/s.GgW','CLIENTE','2026-09-09 02:13:56','2026-09-09 02:13:56'),(6,'Teste Thunder Client','thunderclient.teste+1788912193@example.com','$2a$10$bIYP7TnefJc94a5K5XycI.H3MK1cYYtl1PFRvGh2QSK/T9dUWxlx2','CLIENTE','2026-09-09 03:03:14','2026-09-09 03:03:14'),(7,'Teste JSON','json.teste2+1788912647@example.com','$2a$10$IUeOGWLzihvokECWa4XHHOFaFuY79sKysBFAR5zrFjnyu7I0kBjbW','CLIENTE','2026-09-09 03:10:48','2026-09-09 03:10:48'),(8,'Teste Form','form.teste+1788912656@example.com','$2a$10$vmhIqjjCxoBdm2GMIZaZ1O7wmXE40DuwCgI73CyxO7mNyJc6jnuT.','CLIENTE','2026-09-09 03:10:57','2026-09-09 03:10:57'),(9,'Teste JSON','algum-email-novo@example.com','$2a$10$GH8tfZbKlsSuPlyzaU6ude3R1YbczlQNlMZs6cZqIUI7y.f/JHRKm','CLIENTE','2026-09-09 03:11:18','2026-09-09 03:11:18'),(10,'Teste DTO Editado','editado@example.com','$2a$10$nWAKQqKuGI3mlObFoRSKUO.IjL5jNyoUNPYankZhifZSsGTk9OMda','CLIENTE','2026-09-09 03:25:11','2026-09-09 03:25:18'),(11,'Usuário Postman Editado','postman.editado+1791332799@teste.com','$2a$10$k/sUdhallFe3F.cl5hbJhuqQ10GavqqeLOVJ.9aPL0huuAmsvESK2','CLIENTE','2026-10-07 03:26:39','2026-10-07 03:26:39'),(12,'Admin JWT','admin.jwt@teste.com','$2a$10$j36A67OWsPS89e/JH6lMOOJ4JNEIKu9ojxjp33yrQFuNO81AQqKwe','ADMIN','2026-10-27 22:22:39','2026-10-27 22:22:39'),(13,'Cliente JWT','cliente.jwt@teste.com','$2a$10$j36A67OWsPS89e/JH6lMOOJ4JNEIKu9ojxjp33yrQFuNO81AQqKwe','CLIENTE','2026-10-27 22:22:39','2026-10-27 22:22:39'),(15,'Cliente Dois','cliente2.jwt@teste.com','$2a$10$j36A67OWsPS89e/JH6lMOOJ4JNEIKu9ojxjp33yrQFuNO81AQqKwe','CLIENTE','2026-11-10 23:10:32','2026-11-10 23:10:32'),(20,'Corretor JWT','corretor.jwt@teste.com','$2a$10$j36A67OWsPS89e/JH6lMOOJ4JNEIKu9ojxjp33yrQFuNO81AQqKwe','CORRETOR','2026-11-17 22:46:20','2026-11-17 22:46:20');
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

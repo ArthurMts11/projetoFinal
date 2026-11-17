@@ -21,7 +21,8 @@ export const appConfig: ApplicationConfig = {
     provideRouter(
       routes,
       withComponentInputBinding(),
-      withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
+      // A rolagem é decidida em core/rolagem.ts (filtros não levam o usuário ao topo)
+      withInMemoryScrolling({ scrollPositionRestoration: 'disabled' }),
     ),
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: LOCALE_ID, useValue: 'pt-BR' },

@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/public/login", "/public/cadastro").permitAll()
                 .requestMatchers(HttpMethod.GET, CADASTROS_PUBLICOS).permitAll()
                 .requestMatchers(HttpMethod.POST, "/imoveis/sabermais/*").permitAll()
-                // Qualquer usuário logado (ADMIN ou CLIENTE)
+                // Qualquer usuário logado
                 .requestMatchers(HttpMethod.PATCH, "/imoveis/*/status").authenticated()
                 // Área do cliente
                 .requestMatchers("/favoritos/**").hasRole("CLIENTE")
@@ -66,8 +66,15 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/ofertas/*/cancelar").hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.GET, "/contratos/meus").hasRole("CLIENTE")
                 .requestMatchers(HttpMethod.PATCH, "/contratos/*/assinar").hasRole("CLIENTE")
-                // PDF: admin ou o cliente dono do contrato (conferido no ContratoService)
+                // PDF: equipe ou o cliente dono do contrato (conferido no ContratoService)
                 .requestMatchers(HttpMethod.GET, "/contratos/*/pdf").authenticated()
+                // Corretor: responde ofertas e prepara contratos
+                .requestMatchers(HttpMethod.PATCH, "/ofertas/*/aceitar", "/ofertas/*/recusar").hasRole("CORRETOR")
+                .requestMatchers(HttpMethod.PUT, "/contratos/*").hasRole("CORRETOR")
+                .requestMatchers(HttpMethod.PATCH, "/contratos/*/enviar").hasRole("CORRETOR")
+                .requestMatchers(HttpMethod.GET, "/dashboard/corretor").hasRole("CORRETOR")
+                // Consultas da equipe (admin e corretor)
+                .requestMatchers(HttpMethod.GET, "/ofertas", "/contratos", "/contratos/*").hasAnyRole("ADMIN", "CORRETOR")
                 // Todo o resto (cadastrar/alterar/remover imóveis, gerenciar usuários...)
                 .anyRequest().hasRole("ADMIN")
             )

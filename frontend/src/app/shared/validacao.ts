@@ -19,6 +19,8 @@ export class ErroCampo {
     const e = this.controle().errors ?? {};
     if (e['required'])
       return `${this.nome()} é ${this.nome().startsWith('A ') ? 'obrigatória' : 'obrigatório'}.`;
+    // Regras específicas antes de min/max, que os atributos do <input> também ligam
+    if (e['vencimento']) return 'O vencimento vai do dia 1 ao 28.';
     if (e['email']) return 'Informe um e-mail válido (ex.: nome@dominio.com).';
     if (e['telefone']) return 'Informe o telefone com DDD (ex.: 55 99999-0000).';
     if (e['minlength'])
@@ -45,4 +47,11 @@ export function telefoneValido(controle: AbstractControl): ValidationErrors | nu
   const v = (controle.value ?? '').toString().trim();
   const digitos = v.replace(/\D/g, '');
   return !v || (digitos.length >= 10 && digitos.length <= 11) ? null : { telefone: true };
+}
+
+/** Dia de vencimento: inteiro de 1 a 28 (existe em todos os meses). */
+export function diaDeVencimento(controle: AbstractControl): ValidationErrors | null {
+  const v = controle.value;
+  if (v === null || v === undefined || v === '') return null;
+  return Number.isInteger(v) && v >= 1 && v <= 28 ? null : { vencimento: true };
 }

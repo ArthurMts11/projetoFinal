@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -44,6 +45,13 @@ public class ApiExceptionHandler {
     }
 
     // Ex.: excluir um bairro que ainda tem imóveis
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> alteracaoSimultanea(ObjectOptimisticLockingFailureException e) {
+        log.info("Conflito de versão: {}", e.getMessage());
+        return resposta(HttpStatus.CONFLICT,
+                "Este registro foi alterado por outra pessoa agora há pouco. Recarregue a página e tente de novo.");
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> integridade(DataIntegrityViolationException e) {
         log.warn("Violação de integridade: {}", e.getMostSpecificCause().getMessage());

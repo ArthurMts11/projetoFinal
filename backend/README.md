@@ -35,12 +35,32 @@ O front-end em Angular que consome esta API está na pasta `../frontend`.
   Sem elas a operação funciona normalmente e só o e-mail deixa de ser enviado (fica registrado no log).
 - O CORS libera `http://localhost:4200`; para outra origem defina `CORS_ORIGENS`.
 
+### Perfis
+
+- **CLIENTE**: faz ofertas, favorita imóveis e assina contratos.
+- **CORRETOR**: aceita ou recusa ofertas e prepara os contratos (valor final, prazo, vencimento e observações).
+- **ADMIN**: cadastra imóveis e usuários (inclusive corretores), consulta ofertas e aprova, devolve ou cancela contratos.
+
 ### Regras de negócio
 
 1. Só imóveis `DISPONIVEL` recebem ofertas, e um cliente não pode ter duas ofertas `PENDENTE` para o mesmo imóvel (409).
-2. Aceitar uma oferta: oferta `ACEITA`, imóvel `RESERVADO`, demais pendentes do imóvel `EM_ESPERA` e contrato gerado.
-3. O admin aprova o contrato (envia ao cliente por e-mail) e o cliente assina: imóvel `ALUGADO` ou `VENDIDO`, demais ofertas `RECUSADA`.
-4. Cancelar o contrato (cliente desistiu): contrato `CANCELADO`, imóvel volta a `DISPONIVEL` e as ofertas em espera voltam a `PENDENTE`.
+2. O corretor aceita uma oferta: oferta `ACEITA`, imóvel `RESERVADO`, demais pendentes do imóvel `EM_ESPERA` e contrato
+   gerado em `RASCUNHO`, com o valor da oferta, vencimento no dia 10 e, no aluguel, prazo de 30 meses.
+3. O corretor ajusta os dados (só em `RASCUNHO` ou `DEVOLVIDO`; no aluguel o prazo é obrigatório) e envia: `EM_APROVACAO`.
+4. O admin aprova (`AGUARDANDO_ASSINATURA`, o cliente recebe e-mail) ou devolve com um motivo (`DEVOLVIDO`, volta ao corretor).
+5. O cliente só vê o contrato depois de aprovado. Ao assinar: `ASSINADO`, imóvel `ALUGADO` ou `VENDIDO`, demais ofertas `RECUSADA`.
+6. Cancelar o contrato (cliente desistiu): contrato `CANCELADO`, imóvel volta a `DISPONIVEL` e as ofertas em espera voltam
+   a `PENDENTE`. Contrato assinado não pode ser cancelado.
+7. Ações simultâneas: o aceite trava o imóvel no banco (dois corretores aceitando ofertas do mesmo imóvel são atendidos
+   em fila) e ofertas e contratos têm controle de versão; quem agir sobre um registro que acabou de mudar recebe 409
+   pedindo para recarregar a página.
+
+```
+RASCUNHO ──enviar──▶ EM_APROVACAO ──aprovar──▶ AGUARDANDO_ASSINATURA ──assinar──▶ ASSINADO
+   ▲                     │
+   └──── DEVOLVIDO ◀─devolver
+(cancelar: qualquer situação antes de ASSINADO)
+```
 
 Erros seguem sempre o formato `{"status": 409, "erro": "mensagem"}` (404 item não encontrado, 403 sem permissão, 409 regra de negócio).
 
@@ -51,6 +71,7 @@ Erros seguem sempre o formato `{"status": 409, "erro": "mensagem"}` (404 item n�
 | admin.jwt@teste.com | Senha@123 | ADMIN |
 | cliente.jwt@teste.com | Senha@123 | CLIENTE |
 | cliente2.jwt@teste.com | Senha@123 | CLIENTE |
+| corretor.jwt@teste.com | Senha@123 | CORRETOR |
 
 ## Rotas
 
@@ -62,17 +83,23 @@ Erros seguem sempre o formato `{"status": 409, "erro": "mensagem"}` (404 item n�
 | Cadastrar, alterar e remover imóveis | `POST`, `PUT`, `DELETE /imoveis` | ADMIN |
 | Cadastrar e gerenciar usuários (busca `?busca=`, `DELETE`) | `/api/usuarios` | ADMIN |
 | Fazer oferta / minhas ofertas / cancelar | `POST /ofertas`, `GET /ofertas/minhas`, `PATCH /ofertas/{id}/cancelar` | CLIENTE |
-| Listar ofertas, aceitar, recusar | `GET /ofertas?status=`, `PATCH /ofertas/{id}/aceitar`, `PATCH /ofertas/{id}/recusar` | ADMIN |
+| Listar ofertas | `GET /ofertas?status=` | ADMIN, CORRETOR |
+| Aceitar ou recusar oferta | `PATCH /ofertas/{id}/aceitar`, `PATCH /ofertas/{id}/recusar` | CORRETOR |
 | Favoritos | `GET /favoritos`, `GET /favoritos/ids`, `POST` e `DELETE /favoritos/{imovelId}` | CLIENTE |
 | Meus contratos / assinar | `GET /contratos/meus`, `PATCH /contratos/{id}/assinar` | CLIENTE |
-| Contratos: listar, aprovar e enviar, cancelar | `GET /contratos`, `PATCH /contratos/{id}/aprovar`, `PATCH /contratos/{id}/cancelar` | ADMIN |
-| PDF do contrato | `GET /contratos/{id}/pdf` | ADMIN ou o cliente dono |
-| Painel (totais e gráficos) | `GET /dashboard` | ADMIN |
+| Listar contratos / um contrato | `GET /contratos?status=`, `GET /contratos/{id}` | ADMIN, CORRETOR |
+| Preparar contrato / enviar para aprovação | `PUT /contratos/{id}`, `PATCH /contratos/{id}/enviar` | CORRETOR |
+| Aprovar, devolver (`{"motivo": "..."}`), cancelar contrato | `PATCH /contratos/{id}/aprovar`, `/devolver`, `/cancelar` | ADMIN |
+| PDF do contrato | `GET /contratos/{id}/pdf` | ADMIN, CORRETOR ou o cliente dono (depois de aprovado) |
+| Painel do admin (totais e gráficos) | `GET /dashboard` | ADMIN |
+| Painel do corretor | `GET /dashboard/corretor` | CORRETOR |
 | Alterar status de imóvel | `PATCH /imoveis/{id}/status` | Qualquer usuário logado |
 
 O login devolve um token, que deve ser enviado nas outras requisições no cabeçalho `Authorization: Bearer <token>`.
 
 - Sem token, ou com token inválido ou expirado, a API retorna **401**.
-- Com um token válido de um usuário sem permissão (por exemplo, CLIENTE cadastrando imóvel), retorna **403**.
+- Com um token válido de um usuário sem permissão (por exemplo, CLIENTE cadastrando imóvel ou ADMIN aceitando oferta), retorna **403**.
 
-A pasta `postman/` tem a coleção "Imobiliária - JWT" com todos esses testes.
+A pasta `postman/` tem a coleção "Imobiliária - JWT" com esses testes; a pasta "6. Fluxo do contrato" percorre
+oferta → aceite do corretor → preparo → devolução → aprovação → assinatura (defina `imovelId` com um imóvel disponível).
+`./testar-seguranca.sh` confere as permissões de cada perfil.

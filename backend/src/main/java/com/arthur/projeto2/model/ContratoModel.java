@@ -1,10 +1,12 @@
 package com.arthur.projeto2.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,14 +16,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Contrato gerado quando o admin aceita uma oferta. Só aparece para o cliente
- * depois que o admin aprova e envia (dataAprovacao preenchida).
+ * Contrato gerado quando o corretor aceita uma oferta. O corretor completa os
+ * dados e envia para aprovação; o admin aprova (libera para o cliente assinar)
+ * ou devolve com um motivo. Ver StatusContrato.
  */
 @Entity
 @Table(name = "contratos")
@@ -32,6 +37,12 @@ public class ContratoModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    // Controle de concorrência otimista: duas ações ao mesmo tempo no mesmo registro → a segunda recebe 409
+    @JsonIgnore
+    @Version
+    @Column(nullable = false, columnDefinition = "BIGINT NOT NULL DEFAULT 0")
+    private long versao;
 
     @OneToOne
     @JoinColumn(name = "oferta_id", nullable = false, unique = true)
@@ -44,7 +55,32 @@ public class ContratoModel {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "VARCHAR(30)")
-    private StatusContrato status = StatusContrato.AGUARDANDO_ASSINATURA;
+    private StatusContrato status = StatusContrato.RASCUNHO;
+
+    // Corretor que aceitou a oferta e prepara o contrato
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @ManyToOne
+    @JoinColumn(name = "corretor_id")
+    private UsuarioModel corretor;
+
+    @Column(name = "valor_final", precision = 12, scale = 2)
+    private BigDecimal valorFinal;
+
+    // Só no aluguel; nulo na venda
+    @Column(name = "prazo_meses")
+    private Integer prazoMeses;
+
+    @Column(name = "dia_vencimento")
+    private Integer diaVencimento;
+
+    @Column(columnDefinition = "TEXT")
+    private String observacoes;
+
+    @Column(name = "motivo_devolucao", columnDefinition = "TEXT")
+    private String motivoDevolucao;
+
+    @Column(name = "data_envio")
+    private LocalDateTime dataEnvio;
 
     @Column(name = "data_assinatura")
     private LocalDateTime dataAssinatura;

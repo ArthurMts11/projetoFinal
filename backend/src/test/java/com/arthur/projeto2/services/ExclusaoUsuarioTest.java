@@ -19,13 +19,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.arthur.projeto2.exceptions.RegraNegocioException;
 import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
+import com.arthur.projeto2.repository.ContratoRepository;
 import com.arthur.projeto2.repository.FavoritoRepository;
 import com.arthur.projeto2.repository.ImovelRepository;
 import com.arthur.projeto2.repository.OfertaRepository;
 import com.arthur.projeto2.repository.UsuarioRepository;
 
 /**
- * Regra: usuário com histórico (ofertas) ou responsável por imóveis não pode ser excluído;
+ * Regra: usuário com histórico (ofertas), responsável por imóveis ou corretor de contratos não pode ser excluído;
  * favoritos não impedem a exclusão (são apagados junto).
  */
 @ExtendWith(MockitoExtension.class)
@@ -42,6 +43,9 @@ class ExclusaoUsuarioTest {
 
     @Mock
     private FavoritoRepository favoritoRepository;
+
+    @Mock
+    private ContratoRepository contratoRepository;
 
     @InjectMocks
     private UsuarioService service;
@@ -67,6 +71,17 @@ class ExclusaoUsuarioTest {
         assertThatThrownBy(() -> service.excluir(16, "admin@exemplo.com"))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessageContaining("responsável por imóveis");
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void recusaCorretorResponsavelPorContratos() {
+        when(repository.findById(16)).thenReturn(Optional.of(cliente));
+        when(contratoRepository.existsByCorretorId(16)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.excluir(16, "admin@exemplo.com"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("responsável por contratos");
         verify(repository, never()).delete(any());
     }
 

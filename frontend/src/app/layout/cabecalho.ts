@@ -4,6 +4,7 @@ import { filter } from 'rxjs';
 
 import { AuthService } from '../core/auth.service';
 import { IMOBILIARIA } from '../core/config';
+import { ROTULO_PERFIL } from '../core/rotulos';
 import { Icone } from '../shared/icone';
 
 interface ItemMenu {
@@ -18,6 +19,12 @@ const MENU_CLIENTE: ItemMenu[] = [
   { rotulo: 'Minhas ofertas', link: '/cliente/ofertas' },
   { rotulo: 'Favoritos', link: '/cliente/favoritos' },
   { rotulo: 'Contratos', link: '/cliente/contratos' },
+];
+const MENU_CORRETOR: ItemMenu[] = [
+  { rotulo: 'Painel', link: '/corretor/painel' },
+  { rotulo: 'Ofertas', link: '/corretor/ofertas' },
+  { rotulo: 'Contratos', link: '/corretor/contratos' },
+  { rotulo: 'Imóveis', link: '/' },
 ];
 const MENU_ADMIN: ItemMenu[] = [
   { rotulo: 'Painel', link: '/admin/painel' },
@@ -66,7 +73,7 @@ const MENU_ADMIN: ItemMenu[] = [
             @if (auth.usuario(); as u) {
               <span class="menu-nome" [title]="u.email">
                 {{ u.nome }}
-                <small>{{ u.perfil === 'ADMIN' ? 'Administrador' : 'Cliente' }}</small>
+                <small>{{ rotuloPerfil[u.perfil] }}</small>
               </span>
               <button type="button" class="btn btn-secundario btn-sm" (click)="sair()">Sair</button>
             } @else {
@@ -81,10 +88,12 @@ const MENU_ADMIN: ItemMenu[] = [
 export class Cabecalho {
   protected readonly auth = inject(AuthService);
   protected readonly nome = IMOBILIARIA.nome;
+  protected readonly rotuloPerfil = ROTULO_PERFIL;
   protected readonly aberto = signal(false);
 
   protected readonly itens = computed(() => {
     if (this.auth.isAdmin()) return MENU_ADMIN;
+    if (this.auth.isCorretor()) return MENU_CORRETOR;
     if (this.auth.isCliente()) return MENU_CLIENTE;
     return MENU_VISITANTE;
   });

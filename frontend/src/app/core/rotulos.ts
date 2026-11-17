@@ -1,4 +1,4 @@
-import { StatusContrato, StatusImovel, StatusOferta } from './models';
+import { Perfil, StatusContrato, StatusImovel, StatusOferta } from './models';
 
 // Textos amigáveis para os enums da API
 
@@ -19,9 +19,18 @@ export const ROTULO_STATUS_OFERTA: Record<StatusOferta, string> = {
 };
 
 export const ROTULO_STATUS_CONTRATO: Record<StatusContrato, string> = {
+  RASCUNHO: 'Rascunho',
+  EM_APROVACAO: 'Em aprovação',
+  DEVOLVIDO: 'Devolvido',
   AGUARDANDO_ASSINATURA: 'Aguardando assinatura',
   ASSINADO: 'Assinado',
   CANCELADO: 'Cancelado',
+};
+
+export const ROTULO_PERFIL: Record<Perfil, string> = {
+  ADMIN: 'Administrador',
+  CORRETOR: 'Corretor',
+  CLIENTE: 'Cliente',
 };
 
 export const ROTULO_FINALIDADE: Record<string, string> = {
@@ -38,9 +47,11 @@ export function corDoStatus(status: string): string {
       return 'badge-sucesso';
     case 'PENDENTE':
     case 'AGUARDANDO_ASSINATURA':
+    case 'DEVOLVIDO':
     case 'RESERVADO':
       return 'badge-alerta';
     case 'EM_ESPERA':
+    case 'EM_APROVACAO':
       return 'badge-info';
     case 'RECUSADA':
     case 'CANCELADA':

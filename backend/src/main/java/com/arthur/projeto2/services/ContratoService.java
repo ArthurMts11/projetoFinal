@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.arthur.projeto2.dtos.PreparoContratoDTO;
 import com.arthur.projeto2.exceptions.AcessoNegadoException;
 import com.arthur.projeto2.exceptions.RecursoNaoEncontradoException;
 import com.arthur.projeto2.exceptions.RegraNegocioException;
@@ -27,6 +28,7 @@ import com.arthur.projeto2.model.StatusContrato;
 import com.arthur.projeto2.model.StatusImovel;
 import com.arthur.projeto2.model.StatusOferta;
 import com.arthur.projeto2.model.TipoOferta;
+import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
 import com.arthur.projeto2.repository.ContratoRepository;
 import com.arthur.projeto2.repository.ImovelRepository;
@@ -35,6 +37,11 @@ import com.arthur.projeto2.security.UsuarioLogado;
 
 @Service
 public class ContratoService {
+
+    private static final List<StatusContrato> VISIVEIS_AO_CLIENTE =
+            List.of(StatusContrato.AGUARDANDO_ASSINATURA, StatusContrato.ASSINADO);
+    private static final int VENCIMENTO_PADRAO = 10;
+    private static final int PRAZO_PADRAO_MESES = 30;
 
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
 
@@ -63,36 +70,73 @@ public class ContratoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Contrato " + id + " não encontrado."));
     }
 
-    public List<ContratoModel> listar() {
-        return repository.findAllByOrderByCreatedAtDesc();
+    public List<ContratoModel> listar(StatusContrato status) {
+        return status == null ? repository.findAllByOrderByCreatedAtDesc()
+                : repository.findByStatusOrderByCreatedAtDesc(status);
     }
 
+    /** O cliente só vê o contrato depois que o admin aprova. */
     public List<ContratoModel> meus() {
-        return repository.findByOfertaUsuarioIdAndDataAprovacaoIsNotNullOrderByCreatedAtDesc(usuarioLogado.get().getId());
+        return repository.findByOfertaUsuarioIdAndStatusInOrderByCreatedAtDesc(usuarioLogado.get().getId(),
+                VISIVEIS_AO_CLIENTE);
     }
 
-    /** Chamado quando o admin aceita a oferta. */
+    /** Chamado quando o corretor aceita a oferta: rascunho com os valores da oferta. */
     @Transactional
-    public ContratoModel gerarParaOferta(OfertaModel oferta) {
+    public ContratoModel gerarParaOferta(OfertaModel oferta, UsuarioModel corretor) {
         ContratoModel contrato = new ContratoModel();
         contrato.setOferta(oferta);
-        contrato.setStatus(StatusContrato.AGUARDANDO_ASSINATURA);
+        contrato.setCorretor(corretor);
+        contrato.setStatus(StatusContrato.RASCUNHO);
+        contrato.setValorFinal(oferta.getValorProposto());
+        contrato.setDiaVencimento(VENCIMENTO_PADRAO);
+        contrato.setPrazoMeses(oferta.getTipo() == TipoOferta.ALUGUEL ? PRAZO_PADRAO_MESES : null);
         contrato = repository.save(contrato);
         salvarPdf(contrato);
         return repository.save(contrato);
     }
 
-    /** Admin revisou o PDF e envia para o cliente assinar. */
+    /** Corretor completa os dados do contrato (só enquanto está com ele). */
+    @Transactional
+    public ContratoModel preparar(Integer id, PreparoContratoDTO dados) {
+        ContratoModel contrato = find(id);
+        exigirComCorretor(contrato, "alterar");
+        boolean aluguel = contrato.getOferta().getTipo() == TipoOferta.ALUGUEL;
+        if (aluguel && dados.prazoMeses() == null) {
+            throw new RegraNegocioException("Informe o prazo da locação em meses.");
+        }
+        contrato.setValorFinal(dados.valorFinal());
+        contrato.setPrazoMeses(aluguel ? dados.prazoMeses() : null);
+        contrato.setDiaVencimento(dados.diaVencimento());
+        contrato.setObservacoes(dados.observacoes() == null || dados.observacoes().isBlank()
+                ? null : dados.observacoes().trim());
+        salvarPdf(contrato);
+        return repository.save(contrato);
+    }
+
+    /** Corretor envia o contrato preparado para o admin aprovar. */
+    @Transactional
+    public ContratoModel enviar(Integer id) {
+        ContratoModel contrato = find(id);
+        exigirComCorretor(contrato, "enviar");
+        if (contrato.getValorFinal() == null || contrato.getDiaVencimento() == null
+                || (contrato.getOferta().getTipo() == TipoOferta.ALUGUEL && contrato.getPrazoMeses() == null)) {
+            throw new RegraNegocioException("Complete o valor final, o vencimento e o prazo antes de enviar.");
+        }
+        contrato.setStatus(StatusContrato.EM_APROVACAO);
+        contrato.setDataEnvio(LocalDateTime.now());
+        contrato.setMotivoDevolucao(null);
+        return repository.save(contrato);
+    }
+
+    /** Admin revisou o contrato e libera para o cliente assinar. */
     @Transactional
     public ContratoModel aprovar(Integer id) {
         ContratoModel contrato = find(id);
-        if (contrato.getStatus() != StatusContrato.AGUARDANDO_ASSINATURA) {
-            throw new RegraNegocioException("Só é possível aprovar contratos aguardando assinatura.");
-        }
-        if (contrato.getDataAprovacao() != null) {
-            throw new RegraNegocioException("Este contrato já foi aprovado e enviado ao cliente.");
-        }
+        exigirEmAprovacao(contrato, "aprovar");
+        contrato.setStatus(StatusContrato.AGUARDANDO_ASSINATURA);
         contrato.setDataAprovacao(LocalDateTime.now());
+        salvarPdf(contrato);
         repository.save(contrato);
 
         UsuarioModel cliente = contrato.getOferta().getUsuario();
@@ -103,6 +147,16 @@ public class ContratoService {
         return contrato;
     }
 
+    /** Admin devolve o contrato ao corretor, explicando o que corrigir. */
+    @Transactional
+    public ContratoModel devolver(Integer id, String motivo) {
+        ContratoModel contrato = find(id);
+        exigirEmAprovacao(contrato, "devolver");
+        contrato.setStatus(StatusContrato.DEVOLVIDO);
+        contrato.setMotivoDevolucao(motivo.trim());
+        return repository.save(contrato);
+    }
+
     /**
      * Cliente assina: imóvel vira ALUGADO ou VENDIDO conforme o tipo da oferta,
      * e as outras ofertas do imóvel (pendentes ou em espera) são recusadas.
@@ -111,15 +165,12 @@ public class ContratoService {
     public ContratoModel assinar(Integer id) {
         ContratoModel contrato = find(id);
         UsuarioModel cliente = usuarioLogado.get();
-        if (!(contrato.getOferta().getUsuario().getId() == cliente.getId())) {
+        if (contrato.getOferta().getUsuario().getId() != cliente.getId()) {
             throw new AcessoNegadoException("Este contrato não é seu.");
-        }
-        if (contrato.getDataAprovacao() == null) {
-            throw new RegraNegocioException("O contrato ainda não foi liberado pela imobiliária.");
         }
         if (contrato.getStatus() != StatusContrato.AGUARDANDO_ASSINATURA) {
             throw new RegraNegocioException("Este contrato não está aguardando assinatura (situação: "
-                    + contrato.getStatus().name().toLowerCase().replace('_', ' ') + ").");
+                    + descricao(contrato.getStatus()) + ").");
         }
 
         contrato.setStatus(StatusContrato.ASSINADO);
@@ -142,13 +193,16 @@ public class ContratoService {
     /**
      * Admin cancela (cliente desistiu) ou recusa o contrato: imóvel volta a ficar
      * DISPONIVEL e as ofertas que estavam em espera voltam a ficar pendentes.
+     * Contrato assinado não pode mais ser cancelado.
      */
     @Transactional
     public ContratoModel cancelar(Integer id) {
         ContratoModel contrato = find(id);
-        if (contrato.getStatus() == StatusContrato.CANCELADO) {
-            throw new RegraNegocioException("Este contrato já está cancelado.");
+        if (contrato.getStatus() == StatusContrato.CANCELADO || contrato.getStatus() == StatusContrato.ASSINADO) {
+            throw new RegraNegocioException("Não é possível cancelar um contrato "
+                    + descricao(contrato.getStatus()) + ".");
         }
+        boolean clienteJaViu = VISIVEIS_AO_CLIENTE.contains(contrato.getStatus());
         contrato.setStatus(StatusContrato.CANCELADO);
 
         OfertaModel oferta = contrato.getOferta();
@@ -164,7 +218,7 @@ public class ContratoService {
             espera.setStatus(StatusOferta.PENDENTE);
         }
 
-        if (contrato.getDataAprovacao() != null) {
+        if (clienteJaViu) {
             UsuarioModel cliente = oferta.getUsuario();
             notificacao.enviar(cliente.getEmail(), "Contrato cancelado",
                     "Olá, " + cliente.getNome() + ".\n\nO contrato nº " + contrato.getId() + " do imóvel \""
@@ -173,12 +227,13 @@ public class ContratoService {
         return repository.save(contrato);
     }
 
-    /** PDF do contrato: só o admin ou o cliente dono da oferta. */
+    /** PDF do contrato: admin e corretor sempre; o cliente dono só depois da aprovação. */
     public byte[] pdf(Integer id) {
         ContratoModel contrato = find(id);
         UsuarioModel usuario = usuarioLogado.get();
+        boolean equipe = usuario.getTipo() == TipoUsuario.ADMIN || usuario.getTipo() == TipoUsuario.CORRETOR;
         boolean dono = contrato.getOferta().getUsuario().getId() == usuario.getId();
-        if (!usuarioLogado.isAdmin() && (!dono || contrato.getDataAprovacao() == null)) {
+        if (!equipe && (!dono || !VISIVEIS_AO_CLIENTE.contains(contrato.getStatus()))) {
             throw new AcessoNegadoException("Você não tem acesso a este contrato.");
         }
         try {
@@ -190,6 +245,24 @@ public class ContratoService {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private void exigirComCorretor(ContratoModel contrato, String acao) {
+        if (contrato.getStatus() != StatusContrato.RASCUNHO && contrato.getStatus() != StatusContrato.DEVOLVIDO) {
+            throw new RegraNegocioException("Só é possível " + acao + " contratos em rascunho ou devolvidos. Este está "
+                    + descricao(contrato.getStatus()) + ".");
+        }
+    }
+
+    private void exigirEmAprovacao(ContratoModel contrato, String acao) {
+        if (contrato.getStatus() != StatusContrato.EM_APROVACAO) {
+            throw new RegraNegocioException("Só é possível " + acao + " contratos em aprovação. Este está "
+                    + descricao(contrato.getStatus()) + ".");
+        }
+    }
+
+    private static String descricao(StatusContrato status) {
+        return status.name().toLowerCase().replace('_', ' ');
     }
 
     private void salvarPdf(ContratoModel contrato) {
@@ -226,10 +299,15 @@ public class ContratoService {
         p.add("");
         p.add("CLÁUSULA 1 - OBJETO. O presente contrato tem por objeto a " + (venda ? "compra e venda" : "locação")
                 + " do imóvel descrito acima, nas condições da oferta nº " + o.getId() + ", aceita pela imobiliária.");
-        p.add("CLÁUSULA 2 - VALOR. As partes ajustam o valor de " + moeda(o.getValorProposto())
-                + (venda ? ", a ser pago na forma combinada entre as partes." : " por mês, com vencimento no dia 10 de cada mês."));
+        BigDecimal valor = c.getValorFinal() != null ? c.getValorFinal() : o.getValorProposto();
+        int vencimento = c.getDiaVencimento() != null ? c.getDiaVencimento() : VENCIMENTO_PADRAO;
+        p.add("CLÁUSULA 2 - VALOR. As partes ajustam o valor de " + moeda(valor)
+                + (venda ? ", a ser pago na forma combinada entre as partes, com vencimento no dia " + vencimento + "."
+                        : " por mês, com vencimento no dia " + vencimento + " de cada mês."));
         if (!venda) {
-            p.add("CLÁUSULA 3 - PRAZO. A locação vigora por 30 (trinta) meses a contar da assinatura, podendo ser renovada.");
+            int prazo = c.getPrazoMeses() != null ? c.getPrazoMeses() : PRAZO_PADRAO_MESES;
+            p.add("CLÁUSULA 3 - PRAZO. A locação vigora por " + prazo
+                    + " meses a contar da assinatura, podendo ser renovada.");
         } else {
             p.add("CLÁUSULA 3 - POSSE. A posse do imóvel será transferida ao comprador após a quitação do valor ajustado.");
         }
@@ -238,6 +316,12 @@ public class ContratoService {
         if (o.getMensagem() != null && !o.getMensagem().isBlank()) {
             p.add("");
             p.add("Observações do cliente: " + o.getMensagem());
+        }
+        if (c.getObservacoes() != null) {
+            p.add("Observações do contrato: " + c.getObservacoes());
+        }
+        if (c.getCorretor() != null) {
+            p.add("Corretor responsável: " + c.getCorretor().getNome() + ".");
         }
         p.add("");
         p.add("Gerado em " + LocalDateTime.now().format(DATA_HORA) + ".");

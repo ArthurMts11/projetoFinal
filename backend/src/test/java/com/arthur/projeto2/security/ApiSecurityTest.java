@@ -35,23 +35,32 @@ import com.arthur.projeto2.config.SecurityConfig;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.arthur.projeto2.controller.AuthController;
+import com.arthur.projeto2.controller.ContratoController;
+import com.arthur.projeto2.controller.DashboardController;
 import com.arthur.projeto2.controller.ImovelController;
+import com.arthur.projeto2.controller.OfertaController;
 import com.arthur.projeto2.controller.UsuarioApiController;
+import com.arthur.projeto2.model.ContratoModel;
 import com.arthur.projeto2.model.ImovelModel;
+import com.arthur.projeto2.model.OfertaModel;
 import com.arthur.projeto2.model.StatusImovel;
 import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
 import com.arthur.projeto2.repository.UsuarioRepository;
+import com.arthur.projeto2.services.ContratoService;
+import com.arthur.projeto2.services.DashboardService;
 import com.arthur.projeto2.services.EmailService;
 import com.arthur.projeto2.services.FotoImovelService;
 import com.arthur.projeto2.services.ImovelService;
+import com.arthur.projeto2.services.OfertaService;
 import com.arthur.projeto2.services.UsuarioService;
 
 /**
  * Confere a tabela de rotas da atividade: quem acessa cada ação e se a
  * resposta é 401 (sem token / token inválido) ou 403 (sem permissão).
  */
-@WebMvcTest(controllers = { AuthController.class, ImovelController.class, UsuarioApiController.class })
+@WebMvcTest(controllers = { AuthController.class, ImovelController.class, UsuarioApiController.class,
+        OfertaController.class, ContratoController.class, DashboardController.class })
 @Import({ SecurityConfig.class, JsonErroSeguranca.class, TokenService.class,
         LoginRateLimiter.class, LoginSuccessHandler.class, ContatoRateLimiter.class })
 @TestPropertySource(properties = "app.jwt.secret=" + ApiSecurityTest.SEGREDO)
@@ -84,6 +93,15 @@ class ApiSecurityTest {
 
     @MockitoBean
     private FotoImovelService fotoService;
+
+    @MockitoBean
+    private OfertaService ofertaService;
+
+    @MockitoBean
+    private ContratoService contratoService;
+
+    @MockitoBean
+    private DashboardService dashboardService;
 
     // ---------- Login ----------
 
@@ -272,6 +290,142 @@ class ApiSecurityTest {
                 .andExpect(jsonPath("$.status").value("VENDIDO"));
     }
 
+    // ---------- Perfil corretor: separação entre corretor e admin ----------
+
+    @Test
+    void adminNaoAceitaNemRecusaOferta() throws Exception {
+        String token = bearer(TipoUsuario.ADMIN);
+        mvc.perform(patch("/ofertas/1/aceitar").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mvc.perform(patch("/ofertas/1/recusar").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        verify(ofertaService, never()).aceitar(any());
+    }
+
+    @Test
+    void corretorAceitaOferta() throws Exception {
+        when(ofertaService.aceitar(1)).thenReturn(new OfertaModel());
+        mvc.perform(patch("/ofertas/1/aceitar").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.CORRETOR)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void adminECorretorListamOfertas() throws Exception {
+        when(ofertaService.listar(any())).thenReturn(List.of());
+        mvc.perform(get("/ofertas").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.ADMIN)))
+                .andExpect(status().isOk());
+        mvc.perform(get("/ofertas").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.CORRETOR)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void corretorNaoAprovaNemCancelaContrato() throws Exception {
+        String token = bearer(TipoUsuario.CORRETOR);
+        mvc.perform(patch("/contratos/1/aprovar").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mvc.perform(patch("/contratos/1/cancelar").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mvc.perform(patch("/contratos/1/devolver").header(HttpHeaders.AUTHORIZATION, token)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"x\"}"))
+                .andExpect(status().isForbidden());
+        verify(contratoService, never()).aprovar(any());
+    }
+
+    @Test
+    void corretorPreparaEEnviaContrato() throws Exception {
+        String token = bearer(TipoUsuario.CORRETOR);
+        when(contratoService.preparar(eq(1), any())).thenReturn(new ContratoModel());
+        when(contratoService.enviar(1)).thenReturn(new ContratoModel());
+
+        mvc.perform(put("/contratos/1").header(HttpHeaders.AUTHORIZATION, token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"valorFinal\":1400,\"prazoMeses\":24,\"diaVencimento\":5}"))
+                .andExpect(status().isOk());
+        mvc.perform(patch("/contratos/1/enviar").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void adminNaoPreparaContrato() throws Exception {
+        mvc.perform(put("/contratos/1").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.ADMIN))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"valorFinal\":1400,\"prazoMeses\":24,\"diaVencimento\":5}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void prepararComVencimentoInvalidoDa400() throws Exception {
+        mvc.perform(put("/contratos/1").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.CORRETOR))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"valorFinal\":1400,\"prazoMeses\":24,\"diaVencimento\":31}"))
+                .andExpect(status().isBadRequest());
+        verify(contratoService, never()).preparar(any(), any());
+    }
+
+    @Test
+    void adminDevolveContratoComMotivo() throws Exception {
+        when(contratoService.devolver(1, "Prazo errado")).thenReturn(new ContratoModel());
+        mvc.perform(patch("/contratos/1/devolver").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.ADMIN))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"Prazo errado\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void devolverSemMotivoDa400() throws Exception {
+        mvc.perform(patch("/contratos/1/devolver").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.ADMIN))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"motivo\":\"  \"}"))
+                .andExpect(status().isBadRequest());
+        verify(contratoService, never()).devolver(any(), any());
+    }
+
+    @Test
+    void corretorListaContratosPorSituacao() throws Exception {
+        when(contratoService.listar(any())).thenReturn(List.of());
+        mvc.perform(get("/contratos").param("status", "EM_APROVACAO")
+                .header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.CORRETOR)))
+                .andExpect(status().isOk());
+        verify(contratoService).listar(com.arthur.projeto2.model.StatusContrato.EM_APROVACAO);
+    }
+
+    @Test
+    void clienteNaoListaContratosNemVePainelDoCorretor() throws Exception {
+        String token = bearer(TipoUsuario.CLIENTE);
+        mvc.perform(get("/contratos").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/dashboard/corretor").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void corretorVeSeuPainelMasNaoODoAdmin() throws Exception {
+        String token = bearer(TipoUsuario.CORRETOR);
+        when(dashboardService.resumoCorretor()).thenReturn(java.util.Map.of());
+        mvc.perform(get("/dashboard/corretor").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isOk());
+        mvc.perform(get("/dashboard").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void alteracaoSimultaneaDoContratoDa409ComMensagemClara() throws Exception {
+        when(contratoService.aprovar(1)).thenThrow(
+                new org.springframework.orm.ObjectOptimisticLockingFailureException(ContratoModel.class, 1));
+
+        mvc.perform(patch("/contratos/1/aprovar").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.ADMIN)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value(org.hamcrest.Matchers.containsString("alterado por outra pessoa")));
+    }
+
+    @Test
+    void corretorNaoGerenciaImoveisNemUsuarios() throws Exception {
+        String token = bearer(TipoUsuario.CORRETOR);
+        mvc.perform(post("/imoveis").header(HttpHeaders.AUTHORIZATION, token)
+                .contentType(MediaType.APPLICATION_JSON).content(IMOVEL_JSON))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/usuarios").header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isForbidden());
+    }
+
     private String bearer(TipoUsuario tipo) {
         return "Bearer " + tokenService.gerarToken(usuario(tipo));
     }
@@ -280,7 +434,7 @@ class ApiSecurityTest {
         UsuarioModel u = new UsuarioModel();
         u.setId(1);
         u.setNome("Teste");
-        u.setEmail(tipo == TipoUsuario.ADMIN ? "admin@teste.com" : "cliente@teste.com");
+        u.setEmail(tipo.name().toLowerCase() + "@teste.com");
         u.setTipo(tipo);
         return u;
     }

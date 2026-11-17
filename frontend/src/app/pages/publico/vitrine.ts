@@ -170,7 +170,8 @@ export class Vitrine {
 
   protected irParaPagina(pagina: number): void {
     this.navegar({ page: pagina > 0 ? pagina : null });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Leva ao começo da lista (não ao topo do site), com a lista anterior ainda na tela
+    document.getElementById('titulo-resultados')?.scrollIntoView({ behavior: 'smooth' });
   }
 
   protected async alternarFavorito(imovel: Imovel): Promise<void> {

@@ -16,6 +16,7 @@ import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
 import com.arthur.projeto2.repository.OfertaRepository;
 import com.arthur.projeto2.repository.ImovelRepository;
+import com.arthur.projeto2.repository.ContratoRepository;
 import com.arthur.projeto2.repository.FavoritoRepository;
 import com.arthur.projeto2.repository.UsuarioRepository;
 
@@ -36,6 +37,9 @@ public class UsuarioService {
 
     @Autowired
     private FavoritoRepository favoritoRepository;
+
+    @Autowired
+    private ContratoRepository contratoRepository;
 
     public List<UsuarioModel> getAllUsers() {
         return repository.findAll();
@@ -132,6 +136,10 @@ public class UsuarioService {
             throw new RegraNegocioException(
                     "Este usuário é responsável por imóveis cadastrados e não pode ser excluído.");
         }
+        if (contratoRepository.existsByCorretorId(id)) {
+            throw new RegraNegocioException(
+                    "Este usuário é o corretor responsável por contratos e não pode ser excluído.");
+        }
         favoritoRepository.deleteByUsuarioId(id);
         repository.delete(model);
         repository.flush();
@@ -159,7 +167,7 @@ public class UsuarioService {
         try {
             return TipoUsuario.valueOf(valor.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new DadosInvalidosException("Perfil inválido: use ADMIN ou CLIENTE.");
+            throw new DadosInvalidosException("Perfil inválido: use ADMIN, CORRETOR ou CLIENTE.");
         }
     }
 }
