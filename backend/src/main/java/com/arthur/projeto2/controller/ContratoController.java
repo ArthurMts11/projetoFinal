@@ -32,7 +32,7 @@ public class ContratoController {
 
     @GetMapping
     public List<ContratoModel> listar() {
-        return service.listar();
+        return service.listar(null);
     }
 
     @GetMapping("/meus")
