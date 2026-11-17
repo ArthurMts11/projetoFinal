@@ -38,8 +38,9 @@ public class UsuarioModel {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 
+    // VARCHAR para aceitar perfis novos (ex.: CORRETOR) sem ALTER TABLE; ver MigracaoBanco
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     private TipoUsuario tipo = TipoUsuario.CLIENTE;
 
     @CreationTimestamp

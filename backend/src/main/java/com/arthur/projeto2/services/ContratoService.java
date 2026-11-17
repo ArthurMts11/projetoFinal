@@ -68,7 +68,8 @@ public class ContratoService {
     }
 
     public List<ContratoModel> meus() {
-        return repository.findByOfertaUsuarioIdAndDataAprovacaoIsNotNullOrderByCreatedAtDesc(usuarioLogado.get().getId());
+        return repository.findByOfertaUsuarioIdAndStatusInOrderByCreatedAtDesc(usuarioLogado.get().getId(),
+                List.of(StatusContrato.AGUARDANDO_ASSINATURA, StatusContrato.ASSINADO));
     }
 
     /** Chamado quando o admin aceita a oferta. */

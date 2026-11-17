@@ -34,4 +34,8 @@ public class UsuarioLogado {
     public boolean isAdmin() {
         return get().getTipo() == TipoUsuario.ADMIN;
     }
+
+    public boolean isCorretor() {
+        return get().getTipo() == TipoUsuario.CORRETOR;
+    }
 }
