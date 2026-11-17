@@ -94,7 +94,9 @@ public class OfertaService {
             throw new RegraNegocioException("Só é possível aceitar ofertas pendentes. Esta está "
                     + descricao(oferta.getStatus()) + ".");
         }
-        ImovelModel imovel = oferta.getImovel();
+        // Situação conferida no imóvel travado no banco, não na cópia carregada com a oferta
+        ImovelModel imovel = imovelRepository.travar(oferta.getImovel().getId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Imóvel não encontrado."));
         if (imovel.getStatus() != StatusImovel.DISPONIVEL) {
             throw new RegraNegocioException("O imóvel não está mais disponível (situação: "
                     + imovel.getStatus().name().toLowerCase() + ").");

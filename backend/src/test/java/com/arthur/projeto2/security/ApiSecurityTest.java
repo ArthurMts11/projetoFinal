@@ -407,6 +407,16 @@ class ApiSecurityTest {
     }
 
     @Test
+    void alteracaoSimultaneaDoContratoDa409ComMensagemClara() throws Exception {
+        when(contratoService.aprovar(1)).thenThrow(
+                new org.springframework.orm.ObjectOptimisticLockingFailureException(ContratoModel.class, 1));
+
+        mvc.perform(patch("/contratos/1/aprovar").header(HttpHeaders.AUTHORIZATION, bearer(TipoUsuario.ADMIN)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.erro").value(org.hamcrest.Matchers.containsString("alterado por outra pessoa")));
+    }
+
+    @Test
     void corretorNaoGerenciaImoveisNemUsuarios() throws Exception {
         String token = bearer(TipoUsuario.CORRETOR);
         mvc.perform(post("/imoveis").header(HttpHeaders.AUTHORIZATION, token)

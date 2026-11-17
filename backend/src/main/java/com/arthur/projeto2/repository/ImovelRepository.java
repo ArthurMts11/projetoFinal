@@ -1,10 +1,12 @@
 package com.arthur.projeto2.repository;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,7 +14,18 @@ import com.arthur.projeto2.model.FinalidadeImovel;
 import com.arthur.projeto2.model.ImovelModel;
 import com.arthur.projeto2.model.StatusImovel;
 
+import jakarta.persistence.LockModeType;
+
 public interface ImovelRepository extends JpaRepository<ImovelModel, Integer> {
+
+    /**
+     * Lê o imóvel travando a linha até o fim da transação (SELECT ... FOR UPDATE):
+     * dois corretores aceitando ofertas do mesmo imóvel ao mesmo tempo são atendidos em fila.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select i from ImovelModel i where i.id = :id")
+    Optional<ImovelModel> travar(@Param("id") Integer id);
+
 
     // Preço que vale para o imóvel: o de venda se a finalidade é VENDA, senão o de aluguel
     String PRECO = "(CASE WHEN i.finalidade = com.arthur.projeto2.model.FinalidadeImovel.VENDA "

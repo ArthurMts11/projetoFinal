@@ -76,6 +76,7 @@ class OfertaServiceTest {
         OfertaModel outra = oferta(2, StatusOferta.PENDENTE);
         when(repository.findById(1)).thenReturn(Optional.of(oferta));
         when(repository.findByImovelIdAndStatusIn(anyInt(), anyCollection())).thenReturn(List.of(oferta, outra));
+        when(imovelRepository.travar(5)).thenReturn(Optional.of(imovel));
         when(usuarioLogado.get()).thenReturn(corretor);
         ContratoModel contrato = new ContratoModel();
         contrato.setId(7);
@@ -91,6 +92,19 @@ class OfertaServiceTest {
     }
 
     @Test
+    void aceitarConfereOImovelTravadoNoBancoENaoACopiaEmMemoria() {
+        // Outro corretor acabou de aceitar outra oferta deste imóvel: no banco ele já está RESERVADO
+        ImovelModel noBanco = new ImovelModel();
+        noBanco.setId(5);
+        noBanco.setStatus(StatusImovel.RESERVADO);
+        when(repository.findById(1)).thenReturn(Optional.of(oferta(1, StatusOferta.PENDENTE)));
+        when(imovelRepository.travar(5)).thenReturn(Optional.of(noBanco));
+
+        assertThatThrownBy(() -> service.aceitar(1)).isInstanceOf(RegraNegocioException.class);
+        verify(contratoService, never()).gerarParaOferta(any(), any());
+    }
+
+    @Test
     void aceitarOfertaNaoPendenteDa409() {
         when(repository.findById(1)).thenReturn(Optional.of(oferta(1, StatusOferta.RECUSADA)));
 
@@ -102,6 +116,7 @@ class OfertaServiceTest {
     void aceitarComImovelIndisponivelDa409() {
         imovel.setStatus(StatusImovel.RESERVADO);
         when(repository.findById(1)).thenReturn(Optional.of(oferta(1, StatusOferta.PENDENTE)));
+        when(imovelRepository.travar(5)).thenReturn(Optional.of(imovel));
 
         assertThatThrownBy(() -> service.aceitar(1)).isInstanceOf(RegraNegocioException.class);
         verify(contratoService, never()).gerarParaOferta(any(), any());

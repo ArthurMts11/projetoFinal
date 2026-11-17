@@ -51,6 +51,9 @@ O front-end em Angular que consome esta API está na pasta `../frontend`.
 5. O cliente só vê o contrato depois de aprovado. Ao assinar: `ASSINADO`, imóvel `ALUGADO` ou `VENDIDO`, demais ofertas `RECUSADA`.
 6. Cancelar o contrato (cliente desistiu): contrato `CANCELADO`, imóvel volta a `DISPONIVEL` e as ofertas em espera voltam
    a `PENDENTE`. Contrato assinado não pode ser cancelado.
+7. Ações simultâneas: o aceite trava o imóvel no banco (dois corretores aceitando ofertas do mesmo imóvel são atendidos
+   em fila) e ofertas e contratos têm controle de versão; quem agir sobre um registro que acabou de mudar recebe 409
+   pedindo para recarregar a página.
 
 ```
 RASCUNHO ──enviar──▶ EM_APROVACAO ──aprovar──▶ AGUARDANDO_ASSINATURA ──assinar──▶ ASSINADO

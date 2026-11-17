@@ -10,7 +10,6 @@ import {
   Imovel,
   Oferta,
   PreparoContrato,
-  StatusContrato,
   StatusOferta,
   TipoOferta,
   Usuario,
@@ -56,8 +55,8 @@ export class ContratosService {
   private readonly http = inject(HttpClient);
   private readonly url = `${API_URL}/contratos`;
 
-  todos(status?: StatusContrato | ''): Observable<Contrato[]> {
-    return this.http.get<Contrato[]>(this.url, { params: status ? { status } : {} });
+  todos(): Observable<Contrato[]> {
+    return this.http.get<Contrato[]>(this.url);
   }
 
   um(id: number): Observable<Contrato> {

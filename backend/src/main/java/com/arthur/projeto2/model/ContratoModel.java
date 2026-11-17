@@ -19,6 +19,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,6 +37,12 @@ public class ContratoModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    // Controle de concorrência otimista: duas ações ao mesmo tempo no mesmo registro → a segunda recebe 409
+    @JsonIgnore
+    @Version
+    @Column(nullable = false, columnDefinition = "BIGINT NOT NULL DEFAULT 0")
+    private long versao;
 
     @OneToOne
     @JoinColumn(name = "oferta_id", nullable = false, unique = true)
