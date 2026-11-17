@@ -2645,3 +2645,23 @@ summary {
     font-size: 0.78rem;
   }
 }
+
+/* Recarregando (filtro, aba, página): a lista atual fica visível até chegar a nova */
+.estado-conteudo {
+  transition: opacity 0.15s ease;
+}
+
+.estado-conteudo.atualizando {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+#titulo-resultados {
+  scroll-margin-top: calc(var(--altura-cabecalho) + 16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estado-conteudo {
+    transition: none;
+  }
+}

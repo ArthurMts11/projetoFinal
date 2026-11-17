@@ -32,12 +32,23 @@ function montar() {
 }
 
 describe('Estado (carregando, erro, vazio)', () => {
-  it('mostra "Carregando…" e esconde o conteúdo enquanto carrega', () => {
+  it('no primeiro carregamento mostra "Carregando…" no lugar do conteúdo', () => {
+    const fixture = TestBed.createComponent(Hospedeiro);
+    fixture.componentInstance.carregando.set(true);
+    fixture.detectChanges();
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Carregando…');
+    expect(texto).not.toContain('Lista');
+  });
+
+  it('ao recarregar (ex.: trocar filtro) mantém o conteúdo na tela, marcado como ocupado', () => {
     const { fixture, host, texto } = montar();
     host.carregando.set(true);
     fixture.detectChanges();
-    expect(texto()).toContain('Carregando…');
-    expect(texto()).not.toContain('Lista');
+    expect(texto()).toContain('Lista');
+    expect(texto()).not.toContain('Carregando…');
+    const area = (fixture.nativeElement as HTMLElement).querySelector('[aria-busy="true"]');
+    expect(area).toBeTruthy();
   });
 
   it('mostra a mensagem de erro e o botão "Tentar de novo" emite o evento', () => {

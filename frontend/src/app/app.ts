@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { ViewportScroller } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
 import { IMOBILIARIA } from './core/config';
+import { controlarRolagem } from './core/rolagem';
 import { Cabecalho } from './layout/cabecalho';
 import { ConfirmacaoDialogo } from './shared/confirmacao-dialogo';
 import { Toasts } from './shared/toasts';
@@ -54,4 +56,8 @@ export class App {
   protected readonly imobiliaria = IMOBILIARIA;
   protected readonly ano = new Date().getFullYear();
   protected readonly telefoneLink = '+55' + IMOBILIARIA.telefone.replace(/\D/g, '');
+
+  constructor() {
+    controlarRolagem(inject(Router), inject(ViewportScroller));
+  }
 }
