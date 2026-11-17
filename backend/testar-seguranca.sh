@@ -30,8 +30,10 @@ echo
 
 ADMIN=$(token admin.jwt@teste.com)
 CLIENTE=$(token cliente.jwt@teste.com)
+CORRETOR=$(token corretor.jwt@teste.com)
 [ -z "$ADMIN" ] && echo "ATENÇÃO: login do admin falhou (a API está rodando? o banco/pw4.sql foi importado?)"
 [ -z "$CLIENTE" ] && echo "ATENÇÃO: login do cliente falhou"
+[ -z "$CORRETOR" ] && echo "ATENÇÃO: login do corretor falhou"
 
 echo "--- Rotas públicas (200 sem token) ---"
 testa "Listar imóveis" 200 GET /imoveis
@@ -56,12 +58,25 @@ testa "Cliente lista todas as ofertas" 403 GET /ofertas "$CLIENTE"
 testa "Cliente aceita oferta" 403 PATCH /ofertas/1/aceitar "$CLIENTE"
 testa "Admin faz oferta" 403 POST /ofertas "$ADMIN" '{"imovelId":1,"tipo":"VENDA","valorProposto":1}'
 testa "Admin acessa favoritos" 403 GET /favoritos "$ADMIN"
+testa "Admin aceita oferta" 403 PATCH /ofertas/999999/aceitar "$ADMIN"
+testa "Admin prepara contrato" 403 PUT /contratos/999999 "$ADMIN" '{"valorFinal":1,"diaVencimento":10}'
+testa "Corretor aprova contrato" 403 PATCH /contratos/999999/aprovar "$CORRETOR"
+testa "Corretor devolve contrato" 403 PATCH /contratos/999999/devolver "$CORRETOR" '{"motivo":"x"}'
+testa "Corretor cancela contrato" 403 PATCH /contratos/999999/cancelar "$CORRETOR"
+testa "Corretor cadastra imóvel" 403 POST /imoveis "$CORRETOR" '{"titulo":"Casa"}'
+testa "Corretor vê o painel do admin" 403 GET /dashboard "$CORRETOR"
+testa "Cliente lista contratos" 403 GET /contratos "$CLIENTE"
+testa "Cliente vê o painel do corretor" 403 GET /dashboard/corretor "$CLIENTE"
 
 echo "--- 200: perfil certo ---"
 testa "Admin lista usuários" 200 GET /api/usuarios "$ADMIN"
 testa "Admin vê o painel" 200 GET /dashboard "$ADMIN"
 testa "Admin lista ofertas" 200 GET /ofertas "$ADMIN"
 testa "Admin lista contratos" 200 GET /contratos "$ADMIN"
+testa "Corretor lista ofertas" 200 GET /ofertas "$CORRETOR"
+testa "Corretor lista contratos" 200 GET "/contratos?status=RASCUNHO" "$CORRETOR"
+testa "Corretor vê seu painel" 200 GET /dashboard/corretor "$CORRETOR"
+testa "Corretor aceita oferta inexistente" 404 PATCH /ofertas/999999/aceitar "$CORRETOR"
 testa "Cliente vê suas ofertas" 200 GET /ofertas/minhas "$CLIENTE"
 testa "Cliente vê seus favoritos" 200 GET /favoritos "$CLIENTE"
 testa "Cliente vê seus contratos" 200 GET /contratos/meus "$CLIENTE"

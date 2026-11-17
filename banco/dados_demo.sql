@@ -23,6 +23,12 @@ SELECT 'Cliente Dois', 'cliente2.jwt@teste.com', senha, 'CLIENTE' FROM usuarios
 WHERE email = 'cliente.jwt@teste.com'
   AND NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'cliente2.jwt@teste.com');
 
+-- Corretor (mesma senha: Senha@123), que aceita ofertas e prepara os contratos
+INSERT INTO usuarios (nome, email, senha, tipo)
+SELECT 'Corretor JWT', 'corretor.jwt@teste.com', senha, 'CORRETOR' FROM usuarios
+WHERE email = 'cliente.jwt@teste.com'
+  AND NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'corretor.jwt@teste.com');
+
 -- Imóveis variados (bairro, tipo, finalidade e preço) para filtros e ordenação
 INSERT INTO imoveis (titulo, descricao, preco_venda, preco_aluguel, finalidade, status, dormitorios, banheiros, garagem,
                      area_total, area_construida, endereco, numero, cep, caracteristicas, destaque,
