@@ -2665,3 +2665,7 @@ summary {
     transition: none;
   }
 }
+
+#resultado-busca {
+  scroll-margin-top: calc(var(--altura-cabecalho) + 16px);
+}

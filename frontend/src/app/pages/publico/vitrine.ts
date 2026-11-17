@@ -76,6 +76,7 @@ export class Vitrine {
 
   private filtrosAtuais: FiltrosImovel = {};
   private busca?: Subscription;
+  private buscaDestaques?: Subscription;
 
   constructor() {
     inject(BairrosService)
@@ -84,11 +85,6 @@ export class Vitrine {
     inject(TiposImovelService)
       .listar()
       .subscribe({ next: (t) => this.tipos.set(t), error: () => {} });
-    this.imoveis.buscar({ status: 'DISPONIVEL', destaque: true, size: DESTAQUES }).subscribe({
-      next: (r) => this.destaques.set(r.content),
-      // A faixa é complementar: se falhar, a vitrine segue sem ela (a grade mostra o erro, se houver)
-      error: (e) => console.warn('Não foi possível carregar os destaques', e),
-    });
     if (this.auth.isCliente()) {
       this.favoritosApi
         .ids()
@@ -108,8 +104,12 @@ export class Vitrine {
         { emitEvent: false },
       );
       this.carregar();
+      this.carregarDestaques();
     });
-    inject(DestroyRef).onDestroy(() => this.busca?.unsubscribe());
+    inject(DestroyRef).onDestroy(() => {
+      this.busca?.unsubscribe();
+      this.buscaDestaques?.unsubscribe();
+    });
   }
 
   protected carregar(): void {
@@ -146,6 +146,8 @@ export class Vitrine {
       page: null, // filtro novo volta para a primeira página
     });
     this.filtrosAbertos.set(false);
+    // Leva o usuário até o que a busca encontrou, sem ele ter de rolar
+    document.getElementById('resultado-busca')?.scrollIntoView({ behavior: 'smooth' });
   }
 
   protected limpar(): void {
@@ -189,9 +191,33 @@ export class Vitrine {
     });
   }
 
-  /** Destaques só na entrada da vitrine: primeira página e nenhum filtro aplicado. */
+  /** Destaques que combinam com a busca atual (mesmos filtros), só na primeira página. */
+  private carregarDestaques(): void {
+    this.buscaDestaques?.unsubscribe();
+    const { bairroId, tipoId, finalidade, precoMin, precoMax } = this.filtrosAtuais;
+    this.buscaDestaques = this.imoveis
+      .buscar({
+        bairroId,
+        tipoId,
+        finalidade,
+        precoMin,
+        precoMax,
+        status: 'DISPONIVEL',
+        destaque: true,
+        size: DESTAQUES,
+      })
+      .subscribe({
+        next: (r) => this.destaques.set(r.content),
+        // A faixa é complementar: se falhar, a vitrine segue sem ela
+        error: (e) => {
+          this.destaques.set([]);
+          console.warn('Não foi possível carregar os destaques', e);
+        },
+      });
+  }
+
   protected mostrarDestaques(): boolean {
-    return this.destaques().length > 0 && !this.temFiltro() && !this.filtrosAtuais.page;
+    return this.destaques().length > 0 && !this.filtrosAtuais.page;
   }
 
   protected temFiltro(): boolean {

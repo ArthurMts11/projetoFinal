@@ -104,8 +104,12 @@
     }
   </form>
 
+  <div id="resultado-busca"></div>
   @if (mostrarDestaques()) {
-    <app-destaques [imoveis]="destaques()" />
+    <app-destaques
+      [imoveis]="destaques()"
+      [titulo]="temFiltro() ? 'Destaques para sua busca' : 'Em destaque'"
+    />
   }
 </section>
 

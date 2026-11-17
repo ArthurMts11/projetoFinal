@@ -18,7 +18,7 @@ import { PlantaBaixa } from './planta-baixa';
   template: `
     <section class="destaques" aria-labelledby="titulo-destaques">
       <div class="destaques-cabecalho">
-        <h2 id="titulo-destaques">Em destaque</h2>
+        <h2 id="titulo-destaques">{{ titulo() }}</h2>
         <p>Selecionados pela equipe Fogami</p>
       </div>
       <div class="destaques-grade">
@@ -79,6 +79,7 @@ import { PlantaBaixa } from './planta-baixa';
 })
 export class Destaques {
   readonly imoveis = input.required<Imovel[]>();
+  readonly titulo = input('Em destaque');
 
   protected readonly rotuloFinalidade = ROTULO_FINALIDADE;
   /** Ids cuja foto não carregou: mostram a planta no lugar. */
