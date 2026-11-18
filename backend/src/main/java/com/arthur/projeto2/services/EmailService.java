@@ -85,6 +85,21 @@ public class EmailService {
         mailSender.send(mime);
     }
 
+    /** HTML com versão em texto puro (melhor entrega: menos chance de cair no spam). */
+    public void enviarHtml(String para, String assunto, String html, String textoPuro) {
+        MimeMessage mime = mailSender.createMimeMessage();
+        try {
+            MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
+            helper.setFrom(remetente, nomeRemetente);
+            helper.setTo(para);
+            helper.setSubject(assunto);
+            helper.setText(textoPuro, html);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            throw new MailPreparationException("Não foi possível montar o e-mail para " + para, e);
+        }
+        mailSender.send(mime);
+    }
+
     private String tipoDaImagem(Path arquivo) {
         String extensao = StringUtils.getFilenameExtension(arquivo.getFileName().toString());
         return TIPOS_IMAGEM.getOrDefault(extensao == null ? "" : extensao.toLowerCase(), "application/octet-stream");

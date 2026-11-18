@@ -85,11 +85,15 @@ public class OfertaService {
         oferta.setMensagem(dados.mensagem());
         oferta.setStatus(StatusOferta.PENDENTE);
         OfertaModel salva = repository.save(oferta);
-        notificacao.avisarPerfil(TipoUsuario.CORRETOR, "Nova oferta para o imóvel \"" + imovel.getTitulo() + "\"",
-                cliente.getNome() + " ofereceu " + moeda(dados.valorProposto())
-                        + (dados.tipo() == TipoOferta.VENDA ? " para comprar" : " por mês para alugar")
-                        + " o imóvel \"" + imovel.getTitulo() + "\" (código " + imovel.getId() + ").\n"
-                        + "Entre na área do corretor, em \"Ofertas\", para aceitar ou recusar.");
+        notificacao.avisarPerfil(TipoUsuario.CORRETOR, new Aviso(
+                "Nova oferta: " + imovel.getTitulo(), "Nova oferta", "Chegou uma oferta para " + imovel.getTitulo(),
+                List.of(cliente.getNome() + " quer " + (dados.tipo() == TipoOferta.VENDA ? "comprar" : "alugar")
+                        + " este imóvel. Aceite ou recuse na área do corretor."),
+                Aviso.detalhes("Imóvel", imovel.getTitulo() + " (cód. " + imovel.getId() + ")",
+                        "Cliente", cliente.getNome(),
+                        "Proposta", valorComTipo(dados.valorProposto(), dados.tipo()),
+                        "Mensagem", dados.mensagem()),
+                null, "Ver ofertas pendentes", "/corretor/ofertas?status=PENDENTE"));
         return salva;
     }
 
@@ -124,10 +128,15 @@ public class OfertaService {
         repository.save(oferta);
 
         ContratoModel contrato = contratoService.gerarParaOferta(oferta, usuarioLogado.get());
-        notificacao.enviar(oferta.getUsuario().getEmail(), "Sua oferta foi aceita",
-                "Olá, " + oferta.getUsuario().getNome() + "!\n\nSua oferta para o imóvel \""
-                        + imovel.getTitulo() + "\" foi aceita. O contrato nº " + contrato.getId()
-                        + " está sendo preparado e você será avisado quando ele estiver disponível para assinatura.");
+        notificacao.enviar(oferta.getUsuario().getEmail(), new Aviso(
+                "Sua oferta foi aceita", "Oferta aceita", "Boa notícia: sua oferta foi aceita!",
+                List.of("Olá, " + oferta.getUsuario().getNome() + "! O corretor aceitou sua oferta para o imóvel \""
+                                + imovel.getTitulo() + "\".",
+                        "Agora ele prepara o contrato. Quando a imobiliária aprovar, você recebe outro e-mail para assinar."),
+                Aviso.detalhes("Imóvel", imovel.getTitulo(),
+                        "Sua oferta", valorComTipo(oferta.getValorProposto(), oferta.getTipo()),
+                        "Contrato", "nº " + contrato.getId()),
+                null, "Acompanhar minhas ofertas", "/cliente/ofertas"));
         return oferta;
     }
 
@@ -139,9 +148,14 @@ public class OfertaService {
                     + descricao(oferta.getStatus()) + ".");
         }
         oferta.setStatus(StatusOferta.RECUSADA);
-        notificacao.enviar(oferta.getUsuario().getEmail(), "Resposta sobre sua oferta",
-                "Olá, " + oferta.getUsuario().getNome() + ".\n\nInfelizmente sua oferta para o imóvel \""
-                        + oferta.getImovel().getTitulo() + "\" não foi aceita.");
+        notificacao.enviar(oferta.getUsuario().getEmail(), new Aviso(
+                "Resposta sobre sua oferta", "Oferta recusada", "Sua oferta não foi aceita",
+                List.of("Olá, " + oferta.getUsuario().getNome() + ". Infelizmente a oferta para o imóvel \""
+                                + oferta.getImovel().getTitulo() + "\" não foi aceita.",
+                        "Que tal ver outros imóveis disponíveis ou fazer uma nova proposta?"),
+                Aviso.detalhes("Imóvel", oferta.getImovel().getTitulo(),
+                        "Sua oferta", valorComTipo(oferta.getValorProposto(), oferta.getTipo())),
+                null, "Ver imóveis disponíveis", "/"));
         return repository.save(oferta);
     }
 
@@ -164,6 +178,10 @@ public class OfertaService {
             return imovel.getPrecoVenda() != null || imovel.getFinalidade().name().equals("VENDA");
         }
         return imovel.getPrecoAluguel() != null || imovel.getFinalidade().name().equals("ALUGUEL");
+    }
+
+    private static String valorComTipo(BigDecimal valor, TipoOferta tipo) {
+        return moeda(valor) + (tipo == TipoOferta.ALUGUEL ? " por mês" : "");
     }
 
     private static String moeda(BigDecimal valor) {

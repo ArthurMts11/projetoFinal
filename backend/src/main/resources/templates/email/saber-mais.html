@@ -6,13 +6,13 @@
     <title th:text="${imovel.titulo}">Imóvel</title>
 </head>
 <!-- E-mail: layout em tabelas e estilos inline, que é o que Gmail/Outlook respeitam -->
-<body style="margin:0; padding:0; background:#eef1f4; font-family:Helvetica, Arial, sans-serif; color:#1b2a3a;">
+<body style="margin:0; padding:0; background:#f4f4f2; font-family:Helvetica, Arial, sans-serif; color:#16181d;">
 
 <!-- Texto de pré-visualização (aparece ao lado do assunto na caixa de entrada) -->
 <div style="display:none; max-height:0; overflow:hidden; opacity:0;"
      th:text="|${cliente.nome()}, aqui estão os detalhes do imóvel que você pediu.|">Detalhes do imóvel</div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f4;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f2;">
 <tr><td align="center" style="padding:24px 12px;">
 
 <table role="presentation" width="600" cellpadding="0" cellspacing="0"
@@ -20,10 +20,10 @@
 
     <!-- Cabeçalho -->
     <tr>
-        <td style="background:#1b2a3a; padding:22px 32px;">
+        <td style="background:#16181d; padding:22px 32px;">
             <span style="font-size:20px; font-weight:bold; color:#ffffff; letter-spacing:0.5px;"
                   th:text="${imobiliaria.nome}">Imobiliária</span><br>
-            <span style="font-size:12px; color:#c8a165; letter-spacing:1.5px; text-transform:uppercase;">
+            <span style="font-size:12px; color:#9fc7b5; letter-spacing:1.5px; text-transform:uppercase;">
                 Seu próximo endereço começa aqui
             </span>
         </td>
@@ -43,11 +43,11 @@
             <p style="margin:0 0 12px; font-size:22px; font-weight:bold;">
                 Olá, <span th:text="${cliente.nome()}">Cliente</span>!
             </p>
-            <p style="margin:0; font-size:15px; line-height:1.6; color:#4a5a6a;">
+            <p style="margin:0; font-size:15px; line-height:1.6; color:#5e636e;">
                 Obrigado pelo interesse. Recebemos sua solicitação e separamos abaixo
                 as principais informações do imóvel. Um de nossos corretores vai entrar
                 em contato pelo telefone
-                <strong style="color:#1b2a3a;" th:text="${cliente.telefone()}">(00) 00000-0000</strong>
+                <strong style="color:#16181d;" th:text="${cliente.telefone()}">(00) 00000-0000</strong>
                 em até 1 dia útil.
             </p>
         </td>
@@ -57,54 +57,54 @@
     <tr>
         <td style="padding:24px 32px 8px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                   style="border:1px solid #e3e8ed; border-radius:8px;">
+                   style="border:1px solid #e4e4e1; border-radius:8px;">
                 <tr>
                     <td style="padding:22px 24px;">
-                        <span style="display:inline-block; background:#c8a165; color:#ffffff; font-size:11px; font-weight:bold;
+                        <span style="display:inline-block; background:#1f5f4a; color:#ffffff; font-size:11px; font-weight:bold;
                                      letter-spacing:1px; text-transform:uppercase; padding:4px 10px; border-radius:3px;"
                               th:text="|${imovel.finalidade.name() == 'VENDA' ? 'À venda' : 'Para alugar'}|">À venda</span>
                         <span th:if="${imovel.tipoImovel != null}"
-                              style="display:inline-block; background:#eef1f4; color:#4a5a6a; font-size:11px; font-weight:bold;
+                              style="display:inline-block; background:#f4f4f2; color:#5e636e; font-size:11px; font-weight:bold;
                                      letter-spacing:1px; text-transform:uppercase; padding:4px 10px; border-radius:3px;"
                               th:text="${imovel.tipoImovel.nome}">Apartamento</span>
 
                         <p style="margin:14px 0 4px; font-size:20px; font-weight:bold; line-height:1.3;"
                            th:text="${imovel.titulo}">Título do imóvel</p>
-                        <p th:if="${imovel.bairro != null}" style="margin:0; font-size:14px; color:#7a8896;"
+                        <p th:if="${imovel.bairro != null}" style="margin:0; font-size:14px; color:#8b9099;"
                            th:text="|${imovel.bairro.nome} · ${imovel.bairro.cidade}/${imovel.bairro.estado}|">Centro · Cidade/UF</p>
 
-                        <p th:if="${imovel.precoVenda != null}" style="margin:16px 0 0; font-size:26px; font-weight:bold; color:#1b2a3a;">
+                        <p th:if="${imovel.precoVenda != null}" style="margin:16px 0 0; font-size:26px; font-weight:bold; color:#16181d;">
                             <span th:text="|R$ ${#numbers.formatDecimal(imovel.precoVenda, 1, 'POINT', 2, 'COMMA')}|">R$ 0,00</span>
                         </p>
                         <p th:if="${imovel.precoAluguel != null}"
-                           th:style="${imovel.precoVenda != null} ? 'margin:4px 0 0; font-size:15px; color:#4a5a6a;' : 'margin:16px 0 0; font-size:26px; font-weight:bold; color:#1b2a3a;'">
+                           th:style="${imovel.precoVenda != null} ? 'margin:4px 0 0; font-size:15px; color:#5e636e;' : 'margin:16px 0 0; font-size:26px; font-weight:bold; color:#16181d;'">
                             <span th:text="|R$ ${#numbers.formatDecimal(imovel.precoAluguel, 1, 'POINT', 2, 'COMMA')}|">R$ 0,00</span>
-                            <span style="font-size:14px; font-weight:normal; color:#7a8896;">/mês</span>
+                            <span style="font-size:14px; font-weight:normal; color:#8b9099;">/mês</span>
                         </p>
                     </td>
                 </tr>
 
                 <!-- Características principais (só as que estão cadastradas) -->
                 <tr th:if="${imovel.dormitorios != null or imovel.banheiros != null or imovel.garagem != null or imovel.areaTotal != null}">
-                    <td style="border-top:1px solid #e3e8ed; padding:0;">
+                    <td style="border-top:1px solid #e4e4e1; padding:0;">
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                             <tr>
                                 <td th:if="${imovel.dormitorios != null}" align="center" style="padding:16px 8px;">
                                     <span style="font-size:20px; font-weight:bold;" th:text="${imovel.dormitorios}">3</span><br>
-                                    <span style="font-size:12px; color:#7a8896;" th:text="${imovel.dormitorios == 1} ? 'Dormitório' : 'Dormitórios'">Dormitórios</span>
+                                    <span style="font-size:12px; color:#8b9099;" th:text="${imovel.dormitorios == 1} ? 'Dormitório' : 'Dormitórios'">Dormitórios</span>
                                 </td>
                                 <td th:if="${imovel.banheiros != null}" align="center" style="padding:16px 8px;">
                                     <span style="font-size:20px; font-weight:bold;" th:text="${imovel.banheiros}">2</span><br>
-                                    <span style="font-size:12px; color:#7a8896;" th:text="${imovel.banheiros == 1} ? 'Banheiro' : 'Banheiros'">Banheiros</span>
+                                    <span style="font-size:12px; color:#8b9099;" th:text="${imovel.banheiros == 1} ? 'Banheiro' : 'Banheiros'">Banheiros</span>
                                 </td>
                                 <td th:if="${imovel.garagem != null}" align="center" style="padding:16px 8px;">
                                     <span style="font-size:20px; font-weight:bold;" th:text="${imovel.garagem}">1</span><br>
-                                    <span style="font-size:12px; color:#7a8896;" th:text="${imovel.garagem == 1} ? 'Vaga' : 'Vagas'">Vagas</span>
+                                    <span style="font-size:12px; color:#8b9099;" th:text="${imovel.garagem == 1} ? 'Vaga' : 'Vagas'">Vagas</span>
                                 </td>
                                 <td th:if="${imovel.areaTotal != null}" align="center" style="padding:16px 8px;">
                                     <span style="font-size:20px; font-weight:bold;"
                                           th:text="${#numbers.formatDecimal(imovel.areaTotal, 1, 'POINT', 0, 'COMMA')}">100</span><br>
-                                    <span style="font-size:12px; color:#7a8896;">m² de área</span>
+                                    <span style="font-size:12px; color:#8b9099;">m² de área</span>
                                 </td>
                             </tr>
                         </table>
@@ -117,10 +117,10 @@
     <!-- Descrição e características -->
     <tr th:if="${imovel.descricao != null or imovel.caracteristicas != null}">
         <td style="padding:16px 32px 0;">
-            <p th:if="${imovel.descricao != null}" style="margin:0 0 12px; font-size:15px; line-height:1.6; color:#4a5a6a; white-space:pre-line;"
+            <p th:if="${imovel.descricao != null}" style="margin:0 0 12px; font-size:15px; line-height:1.6; color:#5e636e; white-space:pre-line;"
                th:text="${imovel.descricao}">Descrição do imóvel.</p>
-            <p th:if="${imovel.caracteristicas != null}" style="margin:0; font-size:14px; line-height:1.6; color:#4a5a6a;">
-                <strong style="color:#1b2a3a;">Destaques:</strong>
+            <p th:if="${imovel.caracteristicas != null}" style="margin:0; font-size:14px; line-height:1.6; color:#5e636e;">
+                <strong style="color:#16181d;">Destaques:</strong>
                 <span th:text="${imovel.caracteristicas}">Piscina, churrasqueira</span>
             </p>
         </td>
@@ -129,7 +129,7 @@
     <!-- Galeria (demais fotos) -->
     <tr th:if="${fotos.size() > 1}">
         <td style="padding:24px 32px 0; font-size:0;">
-            <p style="margin:0 0 12px; font-size:13px; font-weight:bold; color:#7a8896; letter-spacing:1px; text-transform:uppercase;">
+            <p style="margin:0 0 12px; font-size:13px; font-weight:bold; color:#8b9099; letter-spacing:1px; text-transform:uppercase;">
                 Mais fotos
             </p>
             <th:block th:each="cid, st : ${fotos}" th:if="${!st.first}">
@@ -142,11 +142,11 @@
     <!-- Mensagem do cliente -->
     <tr>
         <td style="padding:24px 32px 0;">
-            <p style="margin:0 0 8px; font-size:13px; font-weight:bold; color:#7a8896; letter-spacing:1px; text-transform:uppercase;">
+            <p style="margin:0 0 8px; font-size:13px; font-weight:bold; color:#8b9099; letter-spacing:1px; text-transform:uppercase;">
                 Sua mensagem
             </p>
-            <p style="margin:0; padding:14px 16px; background:#f6f8fa; border-left:3px solid #c8a165; font-size:14px;
-                      line-height:1.6; color:#4a5a6a; font-style:italic; white-space:pre-line;"
+            <p style="margin:0; padding:14px 16px; background:#fbfbfa; border-left:3px solid #1f5f4a; font-size:14px;
+                      line-height:1.6; color:#5e636e; font-style:italic; white-space:pre-line;"
                th:text="${cliente.mensagem()}">Mensagem do cliente</p>
         </td>
     </tr>
@@ -155,12 +155,12 @@
     <tr>
         <td align="center" style="padding:32px 32px 8px;">
             <a th:href="|mailto:${imobiliaria.email}?subject=Im%C3%B3vel%20%23${imovel.id}|"
-               style="display:inline-block; background:#1b2a3a; color:#ffffff; text-decoration:none; font-size:15px;
+               style="display:inline-block; background:#1f5f4a; color:#ffffff; text-decoration:none; font-size:15px;
                       font-weight:bold; padding:14px 32px; border-radius:6px;">
                 Falar com um corretor
             </a>
-            <p style="margin:12px 0 0; font-size:13px; color:#7a8896;">
-                ou ligue <strong style="color:#1b2a3a;" th:text="${imobiliaria.telefone}">(00) 0000-0000</strong>
+            <p style="margin:12px 0 0; font-size:13px; color:#8b9099;">
+                ou ligue <strong style="color:#16181d;" th:text="${imobiliaria.telefone}">(00) 0000-0000</strong>
             </p>
         </td>
     </tr>
@@ -168,19 +168,19 @@
     <!-- Assinatura -->
     <tr>
         <td style="padding:24px 32px 32px;">
-            <p style="margin:0; font-size:15px; line-height:1.6; color:#4a5a6a;">
+            <p style="margin:0; font-size:15px; line-height:1.6; color:#5e636e;">
                 Atenciosamente,<br>
-                <strong style="color:#1b2a3a;">Equipe <span th:text="${imobiliaria.nome}">Imobiliária</span></strong>
+                <strong style="color:#16181d;">Equipe <span th:text="${imobiliaria.nome}">Imobiliária</span></strong>
             </p>
         </td>
     </tr>
 
     <!-- Rodapé -->
     <tr>
-        <td style="background:#f6f8fa; border-top:1px solid #e3e8ed; padding:20px 32px; font-size:12px; line-height:1.6; color:#7a8896;">
-            <strong style="color:#4a5a6a;" th:text="${imobiliaria.nome}">Imobiliária</strong><br>
+        <td style="background:#fbfbfa; border-top:1px solid #e4e4e1; padding:20px 32px; font-size:12px; line-height:1.6; color:#8b9099;">
+            <strong style="color:#5e636e;" th:text="${imobiliaria.nome}">Imobiliária</strong><br>
             <span th:text="${imobiliaria.telefone}">(00) 0000-0000</span> ·
-            <a th:href="|mailto:${imobiliaria.email}|" style="color:#7a8896;" th:text="${imobiliaria.email}">contato@imobiliaria.com</a><br>
+            <a th:href="|mailto:${imobiliaria.email}|" style="color:#8b9099;" th:text="${imobiliaria.email}">contato@imobiliaria.com</a><br>
             Você recebeu este e-mail porque pediu informações sobre o imóvel
             <span th:text="|#${imovel.id}|">#1</span>. Valores e disponibilidade sujeitos a alteração.
         </td>

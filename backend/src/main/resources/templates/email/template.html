@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
 </head>
-<body style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
+<body style="font-family: Arial, sans-serif; background:#f4f4f2; padding:20px;">
     <div style="max-width:600px; margin:auto;">
-        <h2 style="color:#2c3e50;">
+        <h2 style="color:#16181d;">
             Olá, <span th:text="${nome}">Usuário</span>!
         </h2>
 
@@ -16,7 +16,7 @@
             <li th:each="item : ${itens}" th:text="${item}">Item</li>
         </ul>
 
-        <a th:href="${link}" style="color:#2980b9;">
+        <a th:href="${link}" style="color:#1f5f4a;">
             Teste de link
         </a>
     </div>

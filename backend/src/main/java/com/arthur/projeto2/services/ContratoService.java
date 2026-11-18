@@ -127,10 +127,12 @@ public class ContratoService {
         contrato.setDataEnvio(LocalDateTime.now());
         contrato.setMotivoDevolucao(null);
         ContratoModel enviado = repository.save(contrato);
-        notificacao.avisarPerfil(TipoUsuario.ADMIN, "Contrato nº " + contrato.getId() + " para aprovar",
-                "O contrato nº " + contrato.getId() + " do imóvel \"" + contrato.getOferta().getImovel().getTitulo()
-                        + "\" foi preparado por " + nomeCorretor(contrato) + ".\n"
-                        + "Entre em \"Contratos\" para aprovar ou devolver.");
+        notificacao.avisarPerfil(TipoUsuario.ADMIN, new Aviso(
+                "Contrato nº " + contrato.getId() + " para aprovar", "Contrato nº " + contrato.getId(),
+                "Um contrato aguarda sua aprovação",
+                List.of(nomeCorretor(contrato) + " preparou o contrato do imóvel \"" + titulo(contrato)
+                        + "\" e enviou para aprovação.", "Confira as condições e aprove ou devolva ao corretor."),
+                condicoes(contrato), null, "Revisar contrato", "/admin/contratos?status=EM_APROVACAO"));
         return enviado;
     }
 
@@ -145,10 +147,13 @@ public class ContratoService {
         repository.save(contrato);
 
         UsuarioModel cliente = contrato.getOferta().getUsuario();
-        notificacao.enviar(cliente.getEmail(), "Seu contrato está pronto para assinatura",
-                "Olá, " + cliente.getNome() + "!\n\nO contrato nº " + contrato.getId() + " do imóvel \""
-                        + contrato.getOferta().getImovel().getTitulo() + "\" foi aprovado pela " + nomeImobiliaria
-                        + ".\nEntre na sua área de cliente, em \"Meus contratos\", para baixar o PDF e assinar.");
+        notificacao.enviar(cliente.getEmail(), new Aviso(
+                "Seu contrato está pronto para assinatura", "Contrato nº " + contrato.getId(),
+                "Seu contrato está pronto para assinar",
+                List.of("Olá, " + cliente.getNome() + "! O contrato do imóvel \"" + titulo(contrato)
+                                + "\" foi aprovado pela " + nomeImobiliaria + ".",
+                        "Abra o PDF, leia com calma e assine em \"Meus contratos\"."),
+                condicoes(contrato), null, "Ler e assinar o contrato", "/cliente/contratos"));
         return contrato;
     }
 
@@ -161,10 +166,13 @@ public class ContratoService {
         contrato.setMotivoDevolucao(motivo.trim());
         ContratoModel devolvido = repository.save(contrato);
         if (contrato.getCorretor() != null) {
-            notificacao.enviar(contrato.getCorretor().getEmail(), "Contrato nº " + contrato.getId() + " devolvido",
-                    "O administrador devolveu o contrato nº " + contrato.getId() + " do imóvel \""
-                            + contrato.getOferta().getImovel().getTitulo() + "\".\nMotivo: " + motivo.trim()
-                            + "\nCorrija em \"Contratos\" e envie de novo.");
+            notificacao.enviar(contrato.getCorretor().getEmail(), new Aviso(
+                    "Contrato nº " + contrato.getId() + " devolvido", "Contrato nº " + contrato.getId(),
+                    "Contrato devolvido para correção",
+                    List.of("O administrador devolveu o contrato do imóvel \"" + titulo(contrato)
+                            + "\". Veja o motivo abaixo, corrija e envie de novo."),
+                    Aviso.detalhes("Imóvel", titulo(contrato), "Cliente", contrato.getOferta().getUsuario().getNome()),
+                    motivo.trim(), "Corrigir contrato", "/corretor/contratos/" + contrato.getId()));
         }
         return devolvido;
     }
@@ -201,11 +209,19 @@ public class ContratoService {
         salvarPdf(contrato);
         ContratoModel assinado = repository.save(contrato);
         String sobre = "o contrato nº " + contrato.getId() + " do imóvel \"" + imovel.getTitulo() + "\"";
-        notificacao.enviar(cliente.getEmail(), "Contrato assinado",
-                "Olá, " + cliente.getNome() + "!\n\nVocê assinou " + sobre + ". O PDF assinado está em \"Contratos\".");
+        notificacao.enviar(cliente.getEmail(), new Aviso(
+                "Contrato assinado", "Contrato nº " + contrato.getId(), "Contrato assinado com sucesso",
+                List.of("Olá, " + cliente.getNome() + "! Você assinou o contrato do imóvel \"" + imovel.getTitulo() + "\".",
+                        "O PDF assinado fica disponível em \"Meus contratos\". Obrigado por escolher a "
+                                + nomeImobiliaria + "!"),
+                condicoes(contrato), null, "Ver meu contrato", "/cliente/contratos"));
         if (contrato.getCorretor() != null) {
-            notificacao.enviar(contrato.getCorretor().getEmail(), "Contrato nº " + contrato.getId() + " assinado",
-                    cliente.getNome() + " assinou " + sobre + ".");
+            notificacao.enviar(contrato.getCorretor().getEmail(), new Aviso(
+                    "Contrato nº " + contrato.getId() + " assinado", "Contrato nº " + contrato.getId(),
+                    "O cliente assinou o contrato",
+                    List.of(cliente.getNome() + " assinou o contrato do imóvel \"" + imovel.getTitulo()
+                            + "\". O imóvel agora está " + (oferta.getTipo() == TipoOferta.VENDA ? "vendido" : "alugado") + "."),
+                    condicoes(contrato), null, "Ver contratos", "/corretor/contratos?aba=encerrados"));
         }
         return assinado;
     }
@@ -240,9 +256,12 @@ public class ContratoService {
 
         if (clienteJaViu) {
             UsuarioModel cliente = oferta.getUsuario();
-            notificacao.enviar(cliente.getEmail(), "Contrato cancelado",
-                    "Olá, " + cliente.getNome() + ".\n\nO contrato nº " + contrato.getId() + " do imóvel \""
-                            + imovel.getTitulo() + "\" foi cancelado.");
+            notificacao.enviar(cliente.getEmail(), new Aviso(
+                    "Contrato cancelado", "Contrato nº " + contrato.getId(), "Contrato cancelado",
+                    List.of("Olá, " + cliente.getNome() + ". O contrato do imóvel \"" + imovel.getTitulo()
+                                    + "\" foi cancelado.",
+                            "Se tiver dúvidas, é só responder este e-mail ou ligar para a imobiliária."),
+                    Aviso.detalhes("Imóvel", imovel.getTitulo()), null, "Ver imóveis disponíveis", "/"));
         }
         return repository.save(contrato);
     }
@@ -279,6 +298,22 @@ public class ContratoService {
             throw new RegraNegocioException("Só é possível " + acao + " contratos em aprovação. Este está "
                     + descricao(contrato.getStatus()) + ".");
         }
+    }
+
+    private static String titulo(ContratoModel c) {
+        return c.getOferta().getImovel().getTitulo();
+    }
+
+    /** Condições do contrato para os e-mails (as mesmas do PDF). */
+    private static java.util.Map<String, String> condicoes(ContratoModel c) {
+        boolean aluguel = c.getOferta().getTipo() == TipoOferta.ALUGUEL;
+        BigDecimal valor = c.getValorFinal() != null ? c.getValorFinal() : c.getOferta().getValorProposto();
+        return Aviso.detalhes("Imóvel", titulo(c),
+                "Cliente", c.getOferta().getUsuario().getNome(),
+                "Valor", moeda(valor) + (aluguel ? " por mês" : ""),
+                "Prazo", c.getPrazoMeses() != null ? c.getPrazoMeses() + " meses" : null,
+                "Vencimento", c.getDiaVencimento() != null ? "dia " + c.getDiaVencimento() : null,
+                "Observações", c.getObservacoes());
     }
 
     private static String nomeCorretor(ContratoModel c) {

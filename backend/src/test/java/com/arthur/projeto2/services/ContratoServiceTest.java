@@ -167,16 +167,15 @@ class ContratoServiceTest {
     void enviarAvisaOsAdministradores() {
         contrato(StatusContrato.RASCUNHO, TipoOferta.ALUGUEL);
         service.enviar(1);
-        verify(notificacao).avisarPerfil(eq(TipoUsuario.ADMIN),
-                org.mockito.ArgumentMatchers.contains("aprovar"), any());
+        verify(notificacao).avisarPerfil(eq(TipoUsuario.ADMIN), org.mockito.ArgumentMatchers.argThat((Aviso a) -> a.assunto().contains("aprovar")));
     }
 
     @Test
     void devolverAvisaOCorretorComOMotivo() {
         contrato(StatusContrato.EM_APROVACAO, TipoOferta.ALUGUEL);
         service.devolver(1, "Prazo deve ser 12 meses");
-        verify(notificacao).enviar(eq(corretor.getEmail()), any(),
-                org.mockito.ArgumentMatchers.contains("Prazo deve ser 12 meses"));
+        verify(notificacao).enviar(eq(corretor.getEmail()), org.mockito.ArgumentMatchers.argThat(
+                (Aviso a) -> "Prazo deve ser 12 meses".equals(a.destaque())));
     }
 
     @Test
@@ -184,8 +183,8 @@ class ContratoServiceTest {
         contrato(StatusContrato.AGUARDANDO_ASSINATURA, TipoOferta.VENDA);
         when(usuarioLogado.get()).thenReturn(cliente);
         service.assinar(1);
-        verify(notificacao).enviar(eq(cliente.getEmail()), any(), any());
-        verify(notificacao).enviar(eq(corretor.getEmail()), any(), any());
+        verify(notificacao).enviar(eq(cliente.getEmail()), any());
+        verify(notificacao).enviar(eq(corretor.getEmail()), any());
     }
 
     @Test
@@ -213,14 +212,14 @@ class ContratoServiceTest {
 
         assertThat(c.getStatus()).isEqualTo(StatusContrato.AGUARDANDO_ASSINATURA);
         assertThat(c.getDataAprovacao()).isNotNull();
-        verify(notificacao).enviar(eq(cliente.getEmail()), any(), any());
+        verify(notificacao).enviar(eq(cliente.getEmail()), any());
     }
 
     @Test
     void aprovarDevolvidoDa409() {
         contrato(StatusContrato.DEVOLVIDO, TipoOferta.ALUGUEL);
         assertThatThrownBy(() -> service.aprovar(1)).isInstanceOf(RegraNegocioException.class);
-        verify(notificacao, never()).enviar(any(), any(), any());
+        verify(notificacao, never()).enviar(any(), any());
     }
 
     @Test
@@ -296,7 +295,7 @@ class ContratoServiceTest {
         assertThat(c.getOferta().getImovel().getStatus()).isEqualTo(StatusImovel.DISPONIVEL);
         assertThat(espera.getStatus()).isEqualTo(StatusOferta.PENDENTE);
         // Rascunho nunca chegou ao cliente: não avisa
-        verify(notificacao, never()).enviar(any(), any(), any());
+        verify(notificacao, never()).enviar(any(), any());
     }
 
     // ---------- Visibilidade para o cliente ----------

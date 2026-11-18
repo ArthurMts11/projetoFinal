@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${aviso.assunto}">Aviso</title>
+</head>
+<!-- Cores e fontes do site: pinho #1f5f4a, tinta #16181d, papel #fbfbfa, divisórias #e4e4e1 -->
+<body style="margin:0; padding:0; background:#f4f4f2; font-family:'Public Sans', Helvetica, Arial, sans-serif; color:#16181d;">
+<div style="display:none; max-height:0; overflow:hidden;" th:text="${aviso.titulo}">Prévia</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f2; padding:32px 12px;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="max-width:600px; background:#ffffff; border:1px solid #e4e4e1; border-radius:8px; overflow:hidden;">
+                <!-- Marca -->
+                <tr>
+                    <td style="padding:22px 32px; border-bottom:1px solid #e4e4e1;">
+                        <span style="font-family:'Schibsted Grotesk', Helvetica, Arial, sans-serif; font-size:22px; font-weight:800; letter-spacing:-0.02em; color:#16181d;">Fogami<span style="color:#1f5f4a;">.</span></span>
+                        <span style="font-size:13px; color:#5e636e; padding-left:6px;">Imobiliária</span>
+                    </td>
+                </tr>
+                <tr><td style="height:4px; background:#1f5f4a; line-height:4px; font-size:0;">&nbsp;</td></tr>
+
+                <!-- Conteúdo -->
+                <tr>
+                    <td style="padding:32px 32px 8px;">
+                        <p style="margin:0 0 8px; font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#1f5f4a;"
+                           th:text="${aviso.etiqueta}">Etiqueta</p>
+                        <h1 style="margin:0 0 20px; font-family:'Schibsted Grotesk', Helvetica, Arial, sans-serif; font-size:24px; line-height:1.25; font-weight:700; color:#16181d;"
+                            th:text="${aviso.titulo}">Título</h1>
+                        <p th:each="p : ${aviso.paragrafos}" th:text="${p}"
+                           style="margin:0 0 14px; font-size:15px; line-height:1.6; color:#16181d;">Parágrafo</p>
+                    </td>
+                </tr>
+
+                <!-- Motivo / observação em destaque -->
+                <tr th:if="${aviso.destaque != null}">
+                    <td style="padding:4px 32px 12px;">
+                        <div style="background:#fbf0dc; border-left:3px solid #8a5300; border-radius:4px; padding:12px 16px; font-size:14px; line-height:1.5; color:#8a5300;"
+                             th:text="${aviso.destaque}">Destaque</div>
+                    </td>
+                </tr>
+
+                <!-- Detalhes -->
+                <tr th:if="${!aviso.detalhes.isEmpty()}">
+                    <td style="padding:8px 32px 8px;">
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                               style="border:1px solid #e4e4e1; border-radius:6px; background:#fbfbfa;">
+                            <tr th:each="d, it : ${aviso.detalhes}">
+                                <td style="padding:10px 16px; font-size:12px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:#5e636e; width:38%;"
+                                    th:styleappend="${!it.last} ? 'border-bottom:1px solid #e4e4e1;'"
+                                    th:text="${d.key}">Rótulo</td>
+                                <td style="padding:10px 16px; font-size:15px; font-weight:600; color:#16181d;"
+                                    th:styleappend="${!it.last} ? 'border-bottom:1px solid #e4e4e1;'"
+                                    th:text="${d.value}">Valor</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Botão -->
+                <tr>
+                    <td style="padding:20px 32px 36px;">
+                        <a th:href="${link}" th:text="${aviso.botaoTexto}" href="#"
+                           style="display:inline-block; background:#1f5f4a; color:#ffffff; text-decoration:none; font-size:15px; font-weight:600; padding:12px 22px; border-radius:6px;">Abrir</a>
+                    </td>
+                </tr>
+
+                <!-- Rodapé -->
+                <tr>
+                    <td style="background:#16181d; padding:24px 32px; color:#c9ccd1; font-size:13px; line-height:1.6;">
+                        <span style="font-family:'Schibsted Grotesk', Helvetica, Arial, sans-serif; font-size:17px; font-weight:800; color:#ffffff;">Fogami.</span><br>
+                        <span th:text="${imobiliaria.nome}">Imobiliária</span> · Panambi (RS)<br>
+                        <span th:text="${imobiliaria.telefone}">Telefone</span> ·
+                        <a th:href="|mailto:${imobiliaria.email}|" th:text="${imobiliaria.email}" style="color:#c9ccd1;">e-mail</a>
+                    </td>
+                </tr>
+            </table>
+            <p style="max-width:600px; margin:16px auto 0; font-size:12px; line-height:1.5; color:#8b9099; text-align:center;">
+                Você recebeu este e-mail porque tem uma conta na Imobiliária Fogami.
+            </p>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

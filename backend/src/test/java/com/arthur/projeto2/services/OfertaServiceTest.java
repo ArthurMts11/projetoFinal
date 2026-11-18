@@ -88,7 +88,7 @@ class OfertaServiceTest {
         assertThat(outra.getStatus()).isEqualTo(StatusOferta.EM_ESPERA);
         assertThat(imovel.getStatus()).isEqualTo(StatusImovel.RESERVADO);
         verify(contratoService).gerarParaOferta(oferta, corretor);
-        verify(notificacao).enviar(eq(cliente.getEmail()), any(), any());
+        verify(notificacao).enviar(eq(cliente.getEmail()), any());
     }
 
     @Test
@@ -129,8 +129,7 @@ class OfertaServiceTest {
 
         service.criar(dto());
 
-        verify(notificacao).avisarPerfil(eq(TipoUsuario.CORRETOR),
-                org.mockito.ArgumentMatchers.contains("Nova oferta"), any());
+        verify(notificacao).avisarPerfil(eq(TipoUsuario.CORRETOR), org.mockito.ArgumentMatchers.argThat((Aviso a) -> a.assunto().contains("Nova oferta")));
     }
 
     @Test
@@ -162,7 +161,7 @@ class OfertaServiceTest {
         service.recusar(1);
 
         assertThat(oferta.getStatus()).isEqualTo(StatusOferta.RECUSADA);
-        verify(notificacao).enviar(eq(cliente.getEmail()), any(), any());
+        verify(notificacao).enviar(eq(cliente.getEmail()), any());
     }
 
     private OfertaDTO dto() {
