@@ -126,7 +126,12 @@ public class ContratoService {
         contrato.setStatus(StatusContrato.EM_APROVACAO);
         contrato.setDataEnvio(LocalDateTime.now());
         contrato.setMotivoDevolucao(null);
-        return repository.save(contrato);
+        ContratoModel enviado = repository.save(contrato);
+        notificacao.avisarPerfil(TipoUsuario.ADMIN, "Contrato nº " + contrato.getId() + " para aprovar",
+                "O contrato nº " + contrato.getId() + " do imóvel \"" + contrato.getOferta().getImovel().getTitulo()
+                        + "\" foi preparado por " + nomeCorretor(contrato) + ".\n"
+                        + "Entre em \"Contratos\" para aprovar ou devolver.");
+        return enviado;
     }
 
     /** Admin revisou o contrato e libera para o cliente assinar. */
@@ -154,7 +159,14 @@ public class ContratoService {
         exigirEmAprovacao(contrato, "devolver");
         contrato.setStatus(StatusContrato.DEVOLVIDO);
         contrato.setMotivoDevolucao(motivo.trim());
-        return repository.save(contrato);
+        ContratoModel devolvido = repository.save(contrato);
+        if (contrato.getCorretor() != null) {
+            notificacao.enviar(contrato.getCorretor().getEmail(), "Contrato nº " + contrato.getId() + " devolvido",
+                    "O administrador devolveu o contrato nº " + contrato.getId() + " do imóvel \""
+                            + contrato.getOferta().getImovel().getTitulo() + "\".\nMotivo: " + motivo.trim()
+                            + "\nCorrija em \"Contratos\" e envie de novo.");
+        }
+        return devolvido;
     }
 
     /**
@@ -187,7 +199,15 @@ public class ContratoService {
         }
 
         salvarPdf(contrato);
-        return repository.save(contrato);
+        ContratoModel assinado = repository.save(contrato);
+        String sobre = "o contrato nº " + contrato.getId() + " do imóvel \"" + imovel.getTitulo() + "\"";
+        notificacao.enviar(cliente.getEmail(), "Contrato assinado",
+                "Olá, " + cliente.getNome() + "!\n\nVocê assinou " + sobre + ". O PDF assinado está em \"Contratos\".");
+        if (contrato.getCorretor() != null) {
+            notificacao.enviar(contrato.getCorretor().getEmail(), "Contrato nº " + contrato.getId() + " assinado",
+                    cliente.getNome() + " assinou " + sobre + ".");
+        }
+        return assinado;
     }
 
     /**
@@ -259,6 +279,10 @@ public class ContratoService {
             throw new RegraNegocioException("Só é possível " + acao + " contratos em aprovação. Este está "
                     + descricao(contrato.getStatus()) + ".");
         }
+    }
+
+    private static String nomeCorretor(ContratoModel c) {
+        return c.getCorretor() != null ? c.getCorretor().getNome() : "um corretor";
     }
 
     private static String descricao(StatusContrato status) {

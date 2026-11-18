@@ -123,6 +123,17 @@ class OfertaServiceTest {
     }
 
     @Test
+    void criarOfertaAvisaOsCorretores() {
+        when(usuarioLogado.get()).thenReturn(cliente);
+        when(imovelRepository.findById(5)).thenReturn(Optional.of(imovel));
+
+        service.criar(dto());
+
+        verify(notificacao).avisarPerfil(eq(TipoUsuario.CORRETOR),
+                org.mockito.ArgumentMatchers.contains("Nova oferta"), any());
+    }
+
+    @Test
     void criarOfertaDuplicadaDa409() {
         when(usuarioLogado.get()).thenReturn(cliente);
         when(imovelRepository.findById(5)).thenReturn(Optional.of(imovel));

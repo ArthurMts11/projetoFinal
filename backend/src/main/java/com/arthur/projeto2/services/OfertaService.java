@@ -1,6 +1,9 @@
 package com.arthur.projeto2.services;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,7 @@ import com.arthur.projeto2.model.OfertaModel;
 import com.arthur.projeto2.model.StatusImovel;
 import com.arthur.projeto2.model.StatusOferta;
 import com.arthur.projeto2.model.TipoOferta;
+import com.arthur.projeto2.model.TipoUsuario;
 import com.arthur.projeto2.model.UsuarioModel;
 import com.arthur.projeto2.repository.ImovelRepository;
 import com.arthur.projeto2.repository.OfertaRepository;
@@ -80,7 +84,13 @@ public class OfertaService {
         oferta.setValorProposto(dados.valorProposto());
         oferta.setMensagem(dados.mensagem());
         oferta.setStatus(StatusOferta.PENDENTE);
-        return repository.save(oferta);
+        OfertaModel salva = repository.save(oferta);
+        notificacao.avisarPerfil(TipoUsuario.CORRETOR, "Nova oferta para o imóvel \"" + imovel.getTitulo() + "\"",
+                cliente.getNome() + " ofereceu " + moeda(dados.valorProposto())
+                        + (dados.tipo() == TipoOferta.VENDA ? " para comprar" : " por mês para alugar")
+                        + " o imóvel \"" + imovel.getTitulo() + "\" (código " + imovel.getId() + ").\n"
+                        + "Entre na área do corretor, em \"Ofertas\", para aceitar ou recusar.");
+        return salva;
     }
 
     /**
@@ -154,6 +164,10 @@ public class OfertaService {
             return imovel.getPrecoVenda() != null || imovel.getFinalidade().name().equals("VENDA");
         }
         return imovel.getPrecoAluguel() != null || imovel.getFinalidade().name().equals("ALUGUEL");
+    }
+
+    private static String moeda(BigDecimal valor) {
+        return NumberFormat.getCurrencyInstance(Locale.of("pt", "BR")).format(valor);
     }
 
     private String descricao(StatusOferta status) {

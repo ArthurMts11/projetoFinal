@@ -31,8 +31,11 @@ O front-end em Angular que consome esta API está na pasta `../frontend`.
 - `../banco/pw4.sql` já traz tudo pronto. Para um banco antigo, `../banco/dados_demo.sql` (rode depois de subir a API uma vez) adiciona bairros, tipos, imóveis e o usuário
   `cliente2.jwt@teste.com` para testar ofertas concorrentes.
 - Os PDFs dos contratos são gerados sem biblioteca externa (`PdfSimples`) e salvos em `uploads/contratos/`.
-- O e-mail ao cliente (oferta aceita, contrato enviado/cancelado) usa as variáveis `MAIL_USER` e `MAIL_PASSWORD`.
-  Sem elas a operação funciona normalmente e só o e-mail deixa de ser enviado (fica registrado no log).
+- E-mails (com `MAIL_USER` e `MAIL_PASSWORD`, senha de app do Gmail): o cliente é avisado quando a oferta é aceita ou
+  recusada, quando o contrato fica pronto para assinar, é cancelado ou é assinado; os corretores recebem cada oferta nova;
+  os administradores recebem cada contrato enviado para aprovação; o corretor é avisado quando o contrato é devolvido
+  (com o motivo) e quando o cliente assina. Sem as variáveis a operação funciona normalmente e só o e-mail deixa de ser
+  enviado (fica registrado no log).
 - O CORS libera `http://localhost:4200`; para outra origem defina `CORS_ORIGENS`.
 
 ### Perfis

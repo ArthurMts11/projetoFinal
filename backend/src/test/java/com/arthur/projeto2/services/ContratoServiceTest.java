@@ -164,6 +164,31 @@ class ContratoServiceTest {
     }
 
     @Test
+    void enviarAvisaOsAdministradores() {
+        contrato(StatusContrato.RASCUNHO, TipoOferta.ALUGUEL);
+        service.enviar(1);
+        verify(notificacao).avisarPerfil(eq(TipoUsuario.ADMIN),
+                org.mockito.ArgumentMatchers.contains("aprovar"), any());
+    }
+
+    @Test
+    void devolverAvisaOCorretorComOMotivo() {
+        contrato(StatusContrato.EM_APROVACAO, TipoOferta.ALUGUEL);
+        service.devolver(1, "Prazo deve ser 12 meses");
+        verify(notificacao).enviar(eq(corretor.getEmail()), any(),
+                org.mockito.ArgumentMatchers.contains("Prazo deve ser 12 meses"));
+    }
+
+    @Test
+    void assinarConfirmaAoClienteEAvisaOCorretor() {
+        contrato(StatusContrato.AGUARDANDO_ASSINATURA, TipoOferta.VENDA);
+        when(usuarioLogado.get()).thenReturn(cliente);
+        service.assinar(1);
+        verify(notificacao).enviar(eq(cliente.getEmail()), any(), any());
+        verify(notificacao).enviar(eq(corretor.getEmail()), any(), any());
+    }
+
+    @Test
     void enviarAluguelSemPrazoDa409() {
         ContratoModel c = contrato(StatusContrato.RASCUNHO, TipoOferta.ALUGUEL);
         c.setPrazoMeses(null);
